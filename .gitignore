@@ -20,3 +20,7 @@ Thumbs.db
 *.npz
 /tmp/
 .cache/
+modules/**/_cache/
+modules/**/_runs/
+modules/**/renders/
+modules/**/exports/

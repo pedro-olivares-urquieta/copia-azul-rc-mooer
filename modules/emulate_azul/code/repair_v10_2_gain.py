@@ -1,7 +1,11 @@
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 from pathlib import Path
 import sys, numpy as np, pandas as pd, soundfile as sf
 from scipy import signal
-ROOT=Path('/mnt/data/reanalysis_cafe_azul');OUT=ROOT/'v10_2_results';sys.path.insert(0,str(ROOT/'v10_2_code'))
+from repo_paths import OUT, CODE, ensure_runtime_dirs
+ensure_runtime_dirs(); sys.path.insert(0,str(CODE))
 import build_v10_2 as m
 
 def noise_amp(y,f,dur):

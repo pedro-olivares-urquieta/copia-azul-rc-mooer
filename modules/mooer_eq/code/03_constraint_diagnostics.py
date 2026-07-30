@@ -1,9 +1,13 @@
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 from pathlib import Path
 import json, math
 import numpy as np, pandas as pd
 from scipy.optimize import minimize
-ROOT=Path('/mnt/data/PEDAL_MOOER_MULTIZONE_MASTER');D=ROOT/'data'
-curves=pd.read_csv(D/'refined_curves_192ppo.csv');freq=curves.frequency_hz.to_numpy();sel=pd.read_csv(D/'final_preset_selection_metrics.csv');pres=pd.read_csv(D/'final_presets.csv')
+from repo_paths import MODULE as ROOT, DATA as D, curves_csv, ensure_runtime_dirs
+ensure_runtime_dirs()
+curves=pd.read_csv(curves_csv());freq=curves.frequency_hz.to_numpy();sel=pd.read_csv(D/'final_preset_selection_metrics.csv');pres=pd.read_csv(D/'final_presets.csv')
 SETUPS={'Bajo':'bass','Híbrido':'hybrid','Guitarra':'guitar'};F=np.array([30.,148.,735.,3637.,18000.]);QFIX=.3;GLOBAL=3.
 REG=[('Subgraves',20,60),('Graves',60,250),('Medios',250,2000),('Presencia',2000,8000),('Brillo',8000,15500)]
 FREE={

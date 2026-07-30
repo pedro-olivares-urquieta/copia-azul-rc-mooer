@@ -1,30 +1,34 @@
 from __future__ import annotations
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 import importlib.util, json, math, re, shutil, subprocess, hashlib
 from pathlib import Path
 import numpy as np, pandas as pd, soundfile as sf
 from scipy import ndimage, signal
 
-BASE = Path('/mnt/data/PEDAL_MULTIZONE_AUDIT_BASE')
-MASTER = Path('/mnt/data/PEDAL_COPY_DSP_MOOER_MASTER')
-OUT = Path('/mnt/data/PEDAL_MOOER_MULTIZONE_MASTER')
-if OUT.exists(): shutil.rmtree(OUT)
-for s in ['audio/originales','code','config','data','plots','docs','checksums','logs']:
-    (OUT/s).mkdir(parents=True, exist_ok=True)
+from repo_paths import (
+    MODULE as OUT,
+    CODE,
+    DATA,
+    CONFIG,
+    PLOTS,
+    LOGS,
+    WAV_CACHE,
+    AUDIO_FILES,
+    audio_path,
+    ensure_runtime_dirs,
+)
 
-# Load previous pipeline only as reusable algorithms; all source curves in this run come from the audios.
-module_path = MASTER/'code/refined_pedal_analysis_and_mooer_optimization.py'
+ensure_runtime_dirs()
+
+# Load pipeline algorithms from this module.
+module_path = CODE / 'source_reconstruction_pipeline.py'
 spec = importlib.util.spec_from_file_location('pipe', module_path)
 pipe = importlib.util.module_from_spec(spec); spec.loader.exec_module(pipe)
 
-files = [
- 'Pink.m4a','Pink rc bass on.m4a','Pink rc hybrid on.m4a','Pink rc guitar on.m4a',
- '1 22k.m4a','1 22k rc bass on.m4a','1 22k rc hybrid on.m4a','1 22k rc guitar on.m4a']
-for f in files: shutil.copy2(Path('/mnt/data')/f, OUT/'audio/originales'/f)
-shutil.copy2(module_path, OUT/'code/source_reconstruction_pipeline.py')
-
-# Fresh 192 PPO curves from the timed source-only run (analysis completed before optimization timeout).
-for f in ['refined_curves_192ppo.csv','audio_qc.csv','method_validation.csv','sweep_repetitions_long.csv','sweep_run_mapping.csv','pink_active_windows.csv']:
-    shutil.copy2(BASE/'data'/f, OUT/'data'/f)
+files = list(AUDIO_FILES.keys())
+# Keep existing 192 PPO / QC artifacts in modules/rc_pedals/data; this script refreshes 384 audit outputs.
 
 # ---------------- Audio QC extension ----------------
 def parse_ebur128(path: Path):
@@ -42,11 +46,14 @@ def parse_ebur128(path: Path):
     }
 
 def load_pcm(name):
-    wav=BASE/'_wav'/f'{Path(name).stem}.wav'
+    src=audio_path(name)
+    wav=WAV_CACHE/f'{Path(name).stem}.wav'
+    if not wav.exists() or wav.stat().st_mtime < src.stat().st_mtime:
+        subprocess.run(['ffmpeg','-y','-loglevel','error','-i',str(src),'-acodec','pcm_f32le',str(wav)],check=True)
     x,sr=sf.read(wav,always_2d=True,dtype='float64')
     return x,sr
 
-base_qc=pd.read_csv(OUT/'data/audio_qc.csv')
+base_qc=pd.read_csv(DATA/'audio_qc.csv')
 extra=[]
 for name in files:
     x2,sr=load_pcm(name); mono=x2.mean(axis=1)
@@ -56,14 +63,14 @@ for name in files:
     tp=20*np.log10(np.max(np.abs(up))+1e-30)
     dc=float(np.mean(mono)); crest=20*np.log10(peak/rms)
     lr_diff=float(20*np.log10(np.sqrt(np.mean((x2[:,0]-x2[:,-1])**2)+1e-30)+1e-30)) if x2.shape[1]>1 else -np.inf
-    eb=parse_ebur128(Path('/mnt/data')/name)
+    eb=parse_ebur128(audio_path(name))
     extra.append({'file':name,'dc_offset':dc,'crest_factor_db':crest,'true_peak_4x_dbfs':tp,
                   'lr_difference_rms_dbfs':lr_diff,**eb})
 extra_df=pd.DataFrame(extra)
 qc=base_qc.merge(extra_df,on='file',how='left')
 qc['digital_clipping']=qc['true_peak_4x_dbfs']>=-0.1
 qc['channels_effectively_duplicate']=qc['stereo_correlation']>=0.9999
-qc.to_csv(OUT/'data/audio_qc_extended.csv',index=False)
+qc.to_csv(DATA/'audio_qc_extended.csv',index=False)
 
 # ---------------- 384 PPO audit ----------------
 ppo=384
@@ -83,7 +90,7 @@ for name in ['Pink.m4a','Pink rc bass on.m4a','Pink rc hybrid on.m4a','Pink rc g
     blocks,starts=pipe.multitaper_blocks(audio[name],sr,st,en,freq384,ppo)
     pink_blocks[name]=blocks
     pink_windows.append({'file':name,'start_s':st,'end_s':en,'blocks':len(blocks),'threshold_dbfs':thr})
-pd.DataFrame(pink_windows).to_csv(OUT/'data/pink_windows_384.csv',index=False)
+pd.DataFrame(pink_windows).to_csv(DATA/'pink_windows_384.csv',index=False)
 
 # Sweep mapping already measured fresh. Refit from audio for 384 audit.
 sweep_files=['1 22k.m4a','1 22k rc bass on.m4a','1 22k rc hybrid on.m4a','1 22k rc guitar on.m4a']
@@ -92,7 +99,7 @@ run_rows=[]
 for name in sweep_files:
     c1,c2,rr=pipe.fit_sweep_runs(audio[name],sr); runs[name]=rr
     for r in rr: run_rows.append({'file':name,'gap1_s':c1,'gap2_s':c2,**r})
-pd.DataFrame(run_rows).to_csv(OUT/'data/sweep_mapping_384_audit.csv',index=False)
+pd.DataFrame(run_rows).to_csv(DATA/'sweep_mapping_384_audit.csv',index=False)
 
 # Cache reference amplitudes at 384.
 ref_amp=[]; ref_snr=[]
@@ -150,12 +157,12 @@ for setup,(pink_name,sweep_name) in setup_files.items():
     for i,row in enumerate(norm):
         for f,v,s in zip(freq384,row,snr[i]):
             run384.append({'setup':setup,'run':i+1,'frequency_hz':f,'normalized_transfer_db':v,'snr_db':s})
-curves384.to_csv(OUT/'data/refined_curves_384ppo_audit.csv',index=False)
-pd.DataFrame(validation384).to_csv(OUT/'data/method_validation_384.csv',index=False)
-pd.DataFrame(run384).to_csv(OUT/'data/sweep_runs_384_long.csv',index=False)
+curves384.to_csv(DATA/'refined_curves_384ppo_audit.csv',index=False)
+pd.DataFrame(validation384).to_csv(DATA/'method_validation_384.csv',index=False)
+pd.DataFrame(run384).to_csv(DATA/'sweep_runs_384_long.csv',index=False)
 
 # 192/384 convergence: downsample 384 to 192 grid and compare central curves.
-c192=pd.read_csv(OUT/'data/refined_curves_192ppo.csv'); f192=c192.frequency_hz.to_numpy()
+c192=pd.read_csv(DATA/'refined_curves_192ppo.csv'); f192=c192.frequency_hz.to_numpy()
 conv=[]
 for setup in setup_files:
     v384=np.interp(np.log(f192),np.log(freq384),curves384[f'{setup}_recommended_analog_db'])
@@ -165,7 +172,7 @@ for setup in setup_files:
         conv.append({'setup':setup,'range':label,'rmse_difference_db':float(np.sqrt(np.mean(d[m]**2))),
                      'median_difference_db':float(np.median(d[m])),'p95_abs_difference_db':float(np.percentile(np.abs(d[m]),95)),
                      'max_abs_difference_db':float(np.max(np.abs(d[m])))})
-pd.DataFrame(conv).to_csv(OUT/'data/grid_convergence_192_vs_384.csv',index=False)
+pd.DataFrame(conv).to_csv(DATA/'grid_convergence_192_vs_384.csv',index=False)
 
 # ---------------- Harmonic excess proxy / non-linearity audit ----------------
 # Demodulate fundamental and harmonics at selected frequencies for each sweep run.
@@ -196,14 +203,14 @@ for setup,(_,sweep_name) in setup_files.items():
                 'reference_harmonic_ratio_db':20*np.log10(ref_ratio+1e-30),
                 'pedal_on_harmonic_ratio_db':20*np.log10(on_ratio+1e-30),
                 'harmonic_excess_on_minus_off_db':20*np.log10((on_ratio+1e-30)/(ref_ratio+1e-30))})
-harm=pd.DataFrame(harm_rows); harm.to_csv(OUT/'data/nonlinearity_harmonic_proxy.csv',index=False)
+harm=pd.DataFrame(harm_rows); harm.to_csv(DATA/'nonlinearity_harmonic_proxy.csv',index=False)
 
 # Summary nonlinearity by setup.
 ns=harm.groupby('setup').agg(
  median_harmonic_excess_db=('harmonic_excess_on_minus_off_db','median'),
  p95_harmonic_excess_db=('harmonic_excess_on_minus_off_db',lambda x: np.percentile(x,95)),
  max_harmonic_excess_db=('harmonic_excess_on_minus_off_db','max')).reset_index()
-ns.to_csv(OUT/'data/nonlinearity_summary.csv',index=False)
+ns.to_csv(DATA/'nonlinearity_summary.csv',index=False)
 
 # Central config.
 config={
@@ -214,6 +221,6 @@ config={
           'gain_effective_coefficient':0.75,'q_base_coefficient':0.569,'q_gain_slope':-0.0026},
  'calibration_uncertainty_scenario_not_measured':{'gain_coefficient_sd':0.015,'q_base_sd':0.010,'q_gain_slope_sd':0.0003,'center_frequency_relative_sd':0.003}
 }
-(OUT/'config/config.json').write_text(json.dumps(config,indent=2,ensure_ascii=False),encoding='utf-8')
+(CONFIG/'config.json').write_text(json.dumps(config,indent=2,ensure_ascii=False),encoding='utf-8')
 print('DONE',OUT)
 print(pd.DataFrame(conv).to_string(index=False))

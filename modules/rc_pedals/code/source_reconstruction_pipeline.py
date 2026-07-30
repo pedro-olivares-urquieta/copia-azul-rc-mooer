@@ -441,19 +441,26 @@ def confidence_label(freq, unc):
 
 
 def main():
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from repo_paths import AUDIO_DIR, MODULE, WAV_CACHE, audio_path, ensure_runtime_dirs
+    ensure_runtime_dirs()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input-dir", type=Path, default=Path("/mnt/data"))
-    parser.add_argument("--output-dir", type=Path, default=Path("/mnt/data/PEDAL_EQ_DSP_REFINED_V2_Q03_LOCKED"))
+    parser.add_argument("--input-dir", type=Path, default=AUDIO_DIR,
+                        help="Unused when using normalized AUDIO_FILES map; kept for CLI compat.")
+    parser.add_argument("--output-dir", type=Path, default=MODULE / "_runs" / "reconstruction")
     args = parser.parse_args()
     root = args.output_dir
-    if root.exists(): shutil.rmtree(root)
+    root.mkdir(parents=True, exist_ok=True)
     for sub in ["data", "plots", "code", "_wav"]: (root / sub).mkdir(parents=True, exist_ok=True)
     expected = [PINK_REF, SWEEP_REF] + [SETUPS[s][k] for s in SETUPS for k in ("pink", "sweep")]
-    missing = [name for name in expected if not (args.input_dir / name).exists()]
+    missing = [name for name in expected if not audio_path(name).exists()]
     if missing: raise FileNotFoundError(missing)
     audio, qc_rows, rates = {}, [], set()
     for name in sorted(set(expected)):
-        x, sr, meta = decode(args.input_dir / name, root / "_wav")
+        x, sr, meta = decode(audio_path(name), root / "_wav")
+        # Keep legacy logical filename in QC for compatibility with existing tables.
+        meta = {**meta, "source_path": str(audio_path(name))}
         audio[name] = x; rates.add(sr); qc_rows.append({"file": name, **meta})
     if len(rates) != 1: raise RuntimeError(f"Sample rates distintos: {rates}")
     sr = rates.pop(); ppo = 192
@@ -478,7 +485,9 @@ def main():
             sweep_window_rows.append({"file": name, "high_gap_1_s": c1, "high_gap_2_s": c2, **run})
 
     refined, method_rows, sweep_repeat_rows = {}, [], []
-    old_curve_path = args.input_dir / "PEDAL_EQ_DSP_ANALYSIS/data/curvas_eq_96_puntos_por_octava.csv"
+    old_curve_path = MODULE / "data" / "curvas_eq_96_puntos_por_octava.csv"
+    if not old_curve_path.exists():
+        old_curve_path = args.input_dir / "PEDAL_EQ_DSP_ANALYSIS/data/curvas_eq_96_puntos_por_octava.csv"
     old_curves = pd.read_csv(old_curve_path) if old_curve_path.exists() else None
     curves_df = pd.DataFrame({"frequency_hz": grid})
     for setup, info in SETUPS.items():

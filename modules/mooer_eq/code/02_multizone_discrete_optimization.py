@@ -1,4 +1,7 @@
 from __future__ import annotations
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 import json, math, itertools, shutil
 from pathlib import Path
 import numpy as np, pandas as pd
@@ -6,11 +9,12 @@ import matplotlib.pyplot as plt
 from scipy import ndimage
 from scipy.optimize import differential_evolution
 
-ROOT=Path('/mnt/data/PEDAL_MOOER_MULTIZONE_MASTER'); DATA=ROOT/'data'; PLOTS=ROOT/'plots'
+from repo_paths import MODULE as ROOT, DATA, PLOTS, curves_csv, ensure_runtime_dirs
+ensure_runtime_dirs()
 for f in ['optimization_candidates_all.csv','pareto_candidates.csv','monte_carlo_candidates.csv','final_preset_selection_metrics.csv','final_presets.csv','final_metrics_by_region.csv','sensitivity_plus_minus_0_5db.csv','historical_comparison_same_metrics.csv','cross_validation.csv','smoothing_validation.csv','ideal_vs_calibrated_model.csv','final_curves_and_residuals.csv','balanced_band_contributions.csv','error_by_octave.csv','results_summary.json']:
     p=DATA/f
     if p.exists():p.unlink()
-curves=pd.read_csv(DATA/'refined_curves_192ppo.csv');freq=curves.frequency_hz.to_numpy();N=len(freq)
+curves=pd.read_csv(curves_csv());freq=curves.frequency_hz.to_numpy();N=len(freq)
 SETUPS=('bass','hybrid','guitar');NAMES={'bass':'Bajo','hybrid':'Híbrido','guitar':'Guitarra'}
 FREQS=np.array([30.,148.,735.,3637.,18000.]);GVALS=np.arange(-16,16.0001,.5);GLOBAL=3.;Q=.3
 REGIONS=[('Subgraves',20,60),('Graves',60,250),('Medios',250,2000),('Presencia',2000,8000),('Brillo',8000,15500)]

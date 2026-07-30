@@ -1,4 +1,7 @@
 from __future__ import annotations
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 import os, sys, math, json, time, hashlib, zipfile, shutil, warnings
 from pathlib import Path
 from collections import defaultdict
@@ -10,11 +13,10 @@ from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
-ROOT=Path('/mnt/data/reanalysis_cafe_azul')
-WAV=ROOT/'wav'; OUT=ROOT/'v10_2_results'; AUD=ROOT/'v10_2_audio'; CODE=ROOT/'v10_2_code'
-for d in [OUT,AUD,CODE]: d.mkdir(parents=True,exist_ok=True)
+from repo_paths import ROOT, WAV, OUT, AUD, CODE, LEGACY, EXPORTS, AUDIO, ensure_runtime_dirs
+ensure_runtime_dirs()
 SR=44100; SEED=10202; RNG=np.random.default_rng(SEED)
-sys.path.insert(0,str(ROOT)); import audio_utils_v7 as au
+sys.path.insert(0,str(CODE)); import audio_utils_v7 as au
 PAIRS={p['key']:p for p in au.pairs}
 STRINGS=['B','E','A','D','G','C']; PHASES=['attack','stabilization','body','sustain','decay']
 PHASE_W={'attack':.08,'stabilization':.14,'body':.40,'sustain':.30,'decay':.08}
@@ -29,8 +31,22 @@ def sha256(p):
         for b in iter(lambda:f.read(1<<20),b''): h.update(b)
     return h.hexdigest()
 
+def ensure_wav(p):
+    """Decode m4a/other compressed audio into a local WAV cache for soundfile."""
+    p=Path(p)
+    if p.suffix.lower()=='.wav' and p.exists():
+        return p
+    WAV.mkdir(parents=True,exist_ok=True)
+    out=WAV/f'{p.stem}.wav'
+    if out.exists() and out.stat().st_mtime>=p.stat().st_mtime:
+        return out
+    import subprocess
+    subprocess.run(['ffmpeg','-y','-loglevel','error','-i',str(p),'-acodec','pcm_f32le',str(out)],check=True)
+    return out
+
 def load(p):
-    y,sr=sf.read(p,always_2d=False)
+    wav=ensure_wav(p)
+    y,sr=sf.read(wav,always_2d=False)
     if y.ndim>1:y=np.mean(y,axis=1)
     return y.astype(np.float64),sr
 
@@ -423,8 +439,14 @@ def cross_validate(obs):
 # fixed old curves with nuisance refit using synthetic Q values
 def load_old_curve(kind):
     if kind=='V9':
-        d=pd.read_csv(ROOT/'v9_results/curva_v9_puntos.csv');return lambda f:interp_log(f,d.frequency_hz,d.eq_v9_db)
-    d=pd.read_csv(ROOT/'v10_1_results/curva_v10_1_densa.csv');return lambda f:interp_log(f,d.frequency_hz,d.eq_precise_db)
+        path=LEGACY/'curva_v9_puntos.csv'
+        if not path.exists():
+            return None
+        d=pd.read_csv(path);return lambda f:interp_log(f,d.frequency_hz,d.eq_v9_db)
+    path=LEGACY/'curva_v10_1_densa.csv'
+    if not path.exists():
+        return None
+    d=pd.read_csv(path);return lambda f:interp_log(f,d.frequency_hz,d.eq_precise_db)
 
 def fit_nuisance_fixed(obs,qfun,exclude=None):
     df=pd.DataFrame(obs);df=df[np.isfinite(df.y)&np.isfinite(df.snr)&(df.snr>=8)&(df.match_cost<=3)&(np.abs(df.y)<=18)].copy()
@@ -442,7 +464,10 @@ def fit_nuisance_fixed(obs,qfun,exclude=None):
     A=np.asarray(A);M=Z.T@(ww[:,None]*Z)+A.T@(300*np.ones((len(A),1))*A)+np.eye(NF)*1e-8;v=Z.T@(ww*yy);return np.linalg.solve(M,v)
 
 def eval_old(obs,name):
-    q=load_old_curve(name);rows=[]
+    q=load_old_curve(name)
+    if q is None:
+        return pd.DataFrame(columns=['model','pair','mae','rmse','p90','p95'])
+    rows=[]
     for hold in sorted(set(o['pair'] for o in obs)):
         nu=fit_nuisance_fixed(obs,q,hold);test=[o for o in obs if o['pair']==hold];df=pd.DataFrame(test)
         rr=[];ww=[]
@@ -669,7 +694,8 @@ def main():
     mt=[];lt=[];resdict={}
     for n,q in variants.items():
         res=residuals_curve(obs,bc,q);resdict[n]=res;mt.append(metric_table(res,n));lt.append(local_metrics(res,n))
-    old9=eval_old(obs,'V9');old10=eval_old(obs,'V10_1');mt.extend([old9,old10])
+    for old in (eval_old(obs,'V9'), eval_old(obs,'V10_1')):
+        if len(old): mt.append(old)
     metrics=pd.concat(mt,ignore_index=True);local=pd.concat(lt,ignore_index=True);metrics.to_csv(OUT/'METRICAS_POR_PAREJA_V10_2.csv',index=False);local.to_csv(OUT/'METRICAS_LOCALES_Y_TEMPORALES_V10_2.csv',index=False)
     sig=pd.DataFrame([paired_significance(resdict['V10_2_CENTRAL'],resdict['V10_2_NO_SUB'],'CENTRAL_vs_NO_SUB'),paired_significance(resdict['V10_2_CENTRAL'],resdict['V10_2_NO_HIGH'],'CENTRAL_vs_NO_HIGH')]);sig.to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_ABLACIONES.csv',index=False);sig.iloc[[0]].to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_NO_SUB.csv',index=False);sig.iloc[[1]].to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_NO_HIGH.csv',index=False)
     # audit 800-1600
@@ -685,20 +711,22 @@ def main():
     plots(curve,raw,central,robust,safe,param,no_sub,no_high,pd.DataFrame(att),pd.DataFrame(matches),pd.DataFrame(wins),pd.DataFrame(gaps),pd.DataFrame(traj),metrics,local)
     report_files(curve,bc,br,central,robust,safe,param,no_sub,no_high,cvagg,metrics,local,pd.DataFrame(matches),sig,ident,cut,centers,Qs,gains,pd.DataFrame(inventory))
     # configs/hash/log
-    pd.DataFrame([dict(file=p.name,sha256=sha256(p),bytes=p.stat().st_size) for p in sorted(WAV.glob('*.wav'))]).to_csv(OUT/'HASHES_WAV_ORIGINALES.csv',index=False)
+    pd.DataFrame([dict(file=p.name,sha256=sha256(p),bytes=p.stat().st_size) for p in sorted(AUDIO.glob('*.m4a'))]).to_csv(OUT/'HASHES_WAV_ORIGINALES.csv',index=False)
     (OUT/'CONFIG_V10_2.json').write_text(json.dumps({'seed':SEED,'sr':SR,'dense_points':4096,'low_points':512,'candidates':CANDS,'selected_central':lc,'selected_robust':lr,'open_above_300_weight':0,'methods':['monotonic DP matching','F0 sub-bin','DPSS multitaper','sinusoidal regression','relative harmonics','adaptive phase windows','robust hierarchical fit']},indent=2),encoding='utf-8')
     print('7/9 render audio',flush=True)
     render_all([central,robust,safe,param,no_sub,no_high],bc,pd.DataFrame(matches))
     print('8/9 package',flush=True)
-    (CODE/'README.md').write_text('# V10.2 pipeline\n\nRun `python build_v10_2.py`. Inputs are verified WAV decoded from the original ZIP. All spectral observations are reextracted from WAV; V9/V10.1 are used only as comparison curves.\n',encoding='utf-8');(CODE/'requirements.txt').write_text('numpy\npandas\nscipy\nsoundfile\nlibrosa\nmatplotlib\n',encoding='utf-8')
-    prompt=Path('/mnt/data/Se ha pegado el markdown(14).md')
-    if prompt.exists():shutil.copy2(prompt,CODE/'PROMPT_MAESTRO_V10_2.md')
+    (CODE/'README.md').write_text('# V10.2 pipeline\n\nRun `python build_v10_2.py` from `modules/emulate_azul/code`. Inputs are normalized M4A under `audio/cafe_vs_azul` (decoded to `_cache/wav`). V9/V10.1 optional curves live in `legacy_curves/`.\n',encoding='utf-8');(CODE/'requirements.txt').write_text('numpy\npandas\nscipy\nsoundfile\nlibrosa\nmatplotlib\n',encoding='utf-8')
+    prompt=ROOT/'docs'/'PROMPT_MAESTRO_V10_2.md'
+    if prompt.exists() and not (CODE/'PROMPT_MAESTRO_V10_2.md').exists():
+        shutil.copy2(prompt,CODE/'PROMPT_MAESTRO_V10_2.md')
     inv=[]
     for r,typ in [(OUT,'result'),(CODE,'code'),(AUD,'audio')]:
         for p in r.rglob('*'):
             if p.is_file():inv.append(dict(path=str(p.relative_to(ROOT)),bytes=p.stat().st_size,type=typ))
     pd.DataFrame(inv).to_csv(OUT/'INVENTARIO_ENTREGABLES_V10_2.csv',index=False)
-    for zname,roots in [('/mnt/data/CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip',[OUT,CODE]),('/mnt/data/CAFE_AZUL_V10_2_AUDIOS.zip',[AUD]),('/mnt/data/CAFE_AZUL_V10_2_COMPLETA.zip',[OUT,CODE,AUD])]:
+    EXPORTS.mkdir(parents=True,exist_ok=True)
+    for zname,roots in [(EXPORTS/'CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip',[OUT,CODE]),(EXPORTS/'CAFE_AZUL_V10_2_AUDIOS.zip',[AUD]),(EXPORTS/'CAFE_AZUL_V10_2_COMPLETA.zip',[OUT,CODE,AUD])]:
         with zipfile.ZipFile(zname,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=4) as z:
             for r in roots:
                 for p in r.rglob('*'):

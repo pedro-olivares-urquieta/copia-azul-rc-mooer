@@ -1,8 +1,12 @@
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 from pathlib import Path
 import sys, os, json, zipfile, shutil, time
 import numpy as np, pandas as pd
 from scipy import signal
-ROOT=Path('/mnt/data/reanalysis_cafe_azul');OUT=ROOT/'v10_2_results';AUD=ROOT/'v10_2_audio';CODE=ROOT/'v10_2_code';sys.path.insert(0,str(CODE))
+from repo_paths import ROOT, OUT, AUD, CODE, EXPORTS, ensure_runtime_dirs
+ensure_runtime_dirs(); sys.path.insert(0,str(CODE))
 import build_v10_2 as m
 RNG=np.random.default_rng(10203)
 
@@ -53,7 +57,7 @@ def main():
     variants={'V10_2_CENTRAL':central,'V10_2_ROBUST':robust,'V10_2_SAFE':safe,'V10_2_PARAMETRIC':param,'V10_2_NO_SUB':no_sub,'V10_2_NO_HIGH':no_high};mts=[];lts=[];resdict={}
     for n,q in variants.items():
         rr=m.residuals_curve(obs,bc,q);mt,lt,rr=clean_metrics(rr,n);mts.append(mt);lts.append(lt);resdict[n]=rr
-    old9=m.eval_old(obs,'V9');old10=m.eval_old(obs,'V10_1');metrics=pd.concat(mts+[old9,old10],ignore_index=True);local=pd.concat(lts,ignore_index=True);metrics.to_csv(OUT/'METRICAS_POR_PAREJA_V10_2.csv',index=False);local.to_csv(OUT/'METRICAS_LOCALES_Y_TEMPORALES_V10_2.csv',index=False)
+    olds=[m.eval_old(obs,'V9'),m.eval_old(obs,'V10_1')];metrics=pd.concat(mts+[o for o in olds if len(o)],ignore_index=True);local=pd.concat(lts,ignore_index=True);metrics.to_csv(OUT/'METRICAS_POR_PAREJA_V10_2.csv',index=False);local.to_csv(OUT/'METRICAS_LOCALES_Y_TEMPORALES_V10_2.csv',index=False)
     sig=pd.DataFrame([m.paired_significance(resdict['V10_2_CENTRAL'],resdict['V10_2_NO_SUB'],'CENTRAL_vs_NO_SUB'),m.paired_significance(resdict['V10_2_CENTRAL'],resdict['V10_2_NO_HIGH'],'CENTRAL_vs_NO_HIGH')]);sig.to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_ABLACIONES.csv',index=False);sig.iloc[[0]].to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_NO_SUB.csv',index=False);sig.iloc[[1]].to_csv(OUT/'SIGNIFICANCIA_PRECISE_VS_NO_HIGH.csv',index=False)
     # compact correlation at critical freqs
     crit=[30.87,41.2,55,120,250,500,800,1000,1250,1600,2000,3150,5000,8000];B=np.column_stack([np.array([m.interp_log(f,m.DENSE_F,row) for f in crit]) for row in boot]).T if False else np.array([[m.interp_log(f,m.DENSE_F,row) for f in crit] for row in boot])
@@ -81,8 +85,9 @@ def main():
     txt+='\n\n## Auditoría de correcciones internas\n\nLa primera ejecución V10.2 rechazó fundamentales y parciales por un estimador de SNR contaminado por leakage de la propia línea. Esos resultados no se conservaron. La versión final estima el piso desde silencios reales y vuelve a ajustar curva, gain, bootstrap, validación y renders.\n';p.write_text(txt)
     print('3 rerender corrected gain',gain,flush=True)
     shutil.rmtree(AUD);AUD.mkdir();m.render_all([central,robust,safe,param,no_sub,no_high],bc,matching)
-    # package overwrite
-    for z in ['/mnt/data/CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip','/mnt/data/CAFE_AZUL_V10_2_AUDIOS.zip','/mnt/data/CAFE_AZUL_V10_2_COMPLETA.zip']:
+    # package overwrite into module exports/
+    EXPORTS.mkdir(parents=True,exist_ok=True)
+    for z in [EXPORTS/'CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip',EXPORTS/'CAFE_AZUL_V10_2_AUDIOS.zip',EXPORTS/'CAFE_AZUL_V10_2_COMPLETA.zip']:
         try:os.remove(z)
         except:pass
     inventory=[]
@@ -90,7 +95,7 @@ def main():
         for f in r.rglob('*'):
             if f.is_file():inventory.append(dict(path=str(f.relative_to(ROOT)),bytes=f.stat().st_size,type=typ))
     pd.DataFrame(inventory).to_csv(OUT/'INVENTARIO_ENTREGABLES_V10_2.csv',index=False)
-    for zname,roots in [('/mnt/data/CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip',[OUT,CODE]),('/mnt/data/CAFE_AZUL_V10_2_AUDIOS.zip',[AUD]),('/mnt/data/CAFE_AZUL_V10_2_COMPLETA.zip',[OUT,CODE,AUD])]:
+    for zname,roots in [(EXPORTS/'CAFE_AZUL_V10_2_ANALISIS_CODIGO.zip',[OUT,CODE]),(EXPORTS/'CAFE_AZUL_V10_2_AUDIOS.zip',[AUD]),(EXPORTS/'CAFE_AZUL_V10_2_COMPLETA.zip',[OUT,CODE,AUD])]:
         with zipfile.ZipFile(zname,'w',compression=zipfile.ZIP_DEFLATED,compresslevel=4) as z:
             for r in roots:
                 for f in r.rglob('*'):

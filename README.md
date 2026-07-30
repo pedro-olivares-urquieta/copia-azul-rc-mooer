@@ -33,6 +33,14 @@ audio/rc_response   ──►  rc_pedals      (curvas RC)
 rc_pedals curvas    ──►  mooer_eq       (presets GE300)
 ```
 
-## Nota de portabilidad
+## Ejecución
 
-Los scripts legacy aún pueden referenciar rutas `/mnt/data/...` de corridas anteriores. La reorganización normaliza estructura y audio; adaptar paths es trabajo siguiente.
+Los scripts ya usan rutas del repo (`code/repo_paths.py` en cada módulo). Ejemplos:
+
+```bash
+python modules/emulate_azul/code/build_v10_2.py
+python modules/rc_pedals/code/01_audio_reconstruction_and_384_audit.py
+python modules/mooer_eq/code/02_multizone_discrete_optimization.py
+```
+
+Requisitos: `ffmpeg` + deps de cada `code/requirements.txt`.

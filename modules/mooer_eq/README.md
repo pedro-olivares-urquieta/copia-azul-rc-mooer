@@ -38,12 +38,20 @@ Orden: 30 / 148 / 735 / 3637 / 18000 Hz · Global +3 dB · Q 0.3
 | Híbrido | `[-1.5, 3.0, 4.0, 8.5, 1.5]` |
 | Guitarra | `[-10.5, 5.5, 2.0, 10.5, 0.0]` |
 
-## Pipeline legacy (orden)
+## Paths
+
+Vía `code/repo_paths.py`:
+
+- Datos/presets: `data/`
+- Curvas objetivo: `../rc_pedals/data/refined_curves_192ppo.csv` (si no hay copia local)
+- Plots: `plots/`
+
+## Pipeline (orden)
 
 ```bash
 # primero reconstrucción en rc_pedals, luego:
-python code/02_multizone_discrete_optimization.py
-python code/03_constraint_diagnostics.py
-python code/04_operational_selection.py
-python code/05_comparison_by_region.py
+python modules/mooer_eq/code/02_multizone_discrete_optimization.py
+python modules/mooer_eq/code/03_constraint_diagnostics.py
+python modules/mooer_eq/code/04_operational_selection.py
+python modules/mooer_eq/code/05_comparison_by_region.py
 ```

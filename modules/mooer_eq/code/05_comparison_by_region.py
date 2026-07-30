@@ -1,6 +1,11 @@
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 from pathlib import Path
 import json,numpy as np,pandas as pd
-D=Path('/mnt/data/PEDAL_MOOER_MULTIZONE_MASTER/data');c=pd.read_csv(D/'refined_curves_192ppo.csv');p=pd.read_csv(D/'final_presets.csv');freq=c.frequency_hz.to_numpy()
+from repo_paths import DATA as D, curves_csv, ensure_runtime_dirs
+ensure_runtime_dirs()
+c=pd.read_csv(curves_csv());p=pd.read_csv(D/'final_presets.csv');freq=c.frequency_hz.to_numpy()
 F=np.array([30.,148.,735.,3637.,18000.]);Q=.3
 OLD={'Bajo':[15.,3.5,-3.5,16.,-3.5],'Híbrido':[-1.5,3.,4.,8.5,1.5],'Guitarra':[-10.,4.5,3.,9.5,1.]};OLD30={'Bajo':[15.5,2.,0.,12.,-.5],'Híbrido':[-1.,1.5,6.5,5.5,4.],'Guitarra':[-9.,3.,5.,7.5,2.5]};KEY={'Bajo':'bass','Híbrido':'hybrid','Guitarra':'guitar'};REG=[('Subgraves',20,60),('Graves',60,250),('Medios',250,2000),('Presencia',2000,8000),('Brillo',8000,15500)]
 def bell(f,fc,g):

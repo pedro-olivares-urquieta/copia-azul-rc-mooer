@@ -27,6 +27,17 @@ Señales:
 
 Las curvas RC reconstruidas alimentan [`../mooer_eq`](../mooer_eq) para buscar presets del GE300.
 
-## Estado
+## Paths
 
-Scripts legacy usan rutas `/mnt/data/...`. Audio canónico del repo ya está en `audio/rc_response`.
+Vía `code/repo_paths.py`:
+
+- Audio canónico: `audio/rc_response` (nombres normalizados)
+- Los scripts siguen usando nombres lógicos legacy (`Pink.m4a`, etc.) mapeados a esos archivos
+- Datos: `data/`
+- Cache WAV: `_cache/wav/`
+
+```bash
+python modules/rc_pedals/code/01_audio_reconstruction_and_384_audit.py
+# o reconstrucción completa:
+python modules/rc_pedals/code/source_reconstruction_pipeline.py
+```

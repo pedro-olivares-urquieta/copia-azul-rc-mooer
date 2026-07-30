@@ -1,9 +1,13 @@
+import sys
+from pathlib import Path as _P
+sys.path.insert(0, str(_P(__file__).resolve().parent))
 from pathlib import Path
 import json,math,numpy as np,pandas as pd
 from scipy import ndimage
 import matplotlib.pyplot as plt
-ROOT=Path('/mnt/data/PEDAL_MOOER_MULTIZONE_MASTER');D=ROOT/'data';P=ROOT/'plots'
-c=pd.read_csv(D/'refined_curves_192ppo.csv');freq=c.frequency_hz.to_numpy();N=len(freq)
+from repo_paths import MODULE as ROOT, DATA as D, PLOTS as P, curves_csv, ensure_runtime_dirs
+ensure_runtime_dirs()
+c=pd.read_csv(curves_csv());freq=c.frequency_hz.to_numpy();N=len(freq)
 F=np.array([30.,148.,735.,3637.,18000.]);Q=.3;REG=[('Subgraves',20,60),('Graves',60,250),('Medios',250,2000),('Presencia',2000,8000),('Brillo',8000,15500)];KEY={'Bajo':'bass','Híbrido':'hybrid','Guitarra':'guitar'}
 OLD={'Bajo':np.array([15.,3.5,-3.5,16.,-3.5]),'Híbrido':np.array([-1.5,3.,4.,8.5,1.5]),'Guitarra':np.array([-10.,4.5,3.,9.5,1.])}
 MINIMAX={'Bajo':np.array([16.,2.,-2.5,16.,-4.]),'Híbrido':np.array([-2.,3.5,2.5,10.5,0.]),'Guitarra':np.array([-10.,5.5,.5,13.,-2.])}

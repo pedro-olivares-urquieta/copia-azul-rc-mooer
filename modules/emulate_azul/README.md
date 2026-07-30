@@ -31,6 +31,21 @@ python code/postprocess_v10_2.py
 - Curva: poco cambio <60 Hz; recorte ~80–630 Hz; boost ~1–3 kHz
 - Preset paramétrico en `results/PRESET_PARAMETRICO_V10_2.csv`
 
-## Estado
+## Paths
 
-Scripts aún asumen rutas `/mnt/data/reanalysis_cafe_azul` y dependen de `audio_utils_v7` + WAVs decodificados. Próximo paso: paths relativos a `audio/cafe_vs_azul`.
+Los scripts usan rutas del repo vía `code/repo_paths.py`:
+
+- Audio: `audio/cafe_vs_azul`
+- Resultados: `results/`
+- Cache WAV: `_cache/wav/`
+- Renders: `renders/`
+- Exports zip: `exports/`
+- Curvas V9/V10.1 opcionales: `legacy_curves/`
+
+Ejecutar desde cualquier cwd:
+
+```bash
+python modules/emulate_azul/code/build_v10_2.py
+```
+
+Dependencias: `code/requirements.txt` (+ `ffmpeg` en el sistema).
