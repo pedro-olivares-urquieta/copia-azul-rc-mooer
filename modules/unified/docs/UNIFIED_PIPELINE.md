@@ -9,18 +9,35 @@ python modules/unified/code/cli.py evaluate
 python modules/unified/code/cli.py plan
 ```
 
-## Orquestador: Azul (± RC) → Mooer anti-error
+## Orquestador AUDIO: cualquier bajo → Azul ± RC → Mooer
+
+Aplica curvas **al archivo que le pases ahora** (FIR on-demand). No reutiliza renders históricos.
 
 ```bash
-# 1) Mooer copia la curva Café→Azul
+# Emular Azul desde cualquier bajo seco
+python modules/unified/code/cli.py process -i /ruta/bajo.wav --chain azul
+
+# Cascada Azul + RC
+python modules/unified/code/cli.py process -i /ruta/bajo.m4a --chain azul+rc --rc-setup bass
+
+# Un solo GE300 (preset anti-error)
+python modules/unified/code/cli.py process -i /ruta/bajo.wav --chain mooer --mooer-preset azul
+
+# Near-realtime (OLA por bloques)
+python modules/unified/code/cli.py process -i /ruta/bajo.wav --chain azul --streaming
+
+# Fidelidad vs toma real
+python modules/unified/code/cli.py verify -i cafe.m4a -r azul.m4a --chain azul
+```
+
+Audio out: `modules/unified/_runs/process/` (gitignored).  
+Chequeo: `*_measured_transfer.csv` — RMSE FIR vs curva pretendida debe ser ≈ 0 dB.
+
+## Orquestador PRESETS: Azul (± RC) → Mooer anti-error
+
+```bash
 python modules/unified/code/cli.py fit-azul
-
-# 2) Cascada Azul+RC modelada solo en Mooer
 python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose plus
-
-# 3) RC físico ON → Mooer hace el residual (Azul − RC)
-python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus
-# Si el nivel global lo maneja otro bloque, preferir forma:
 python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus --timbre-only
 ```
 

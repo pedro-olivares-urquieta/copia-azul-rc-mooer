@@ -104,6 +104,28 @@ def list_stages(paths: RepoPaths | None = None) -> list[PipelineStage]:
             description="Cross-module summary report",
         ),
         PipelineStage(
+            name="unified.process_azul_demo",
+            module="unified",
+            command=[
+                py,
+                str(paths.unified / "code" / "cli.py"),
+                "process",
+                "-i",
+                str(paths.cafe_vs_azul_audio / "cafe__note_e__open.m4a"),
+                "--chain",
+                "azul",
+                "-o",
+                str(paths.unified / "_runs" / "process" / "demo_cafe_e__azul.wav"),
+            ],
+            inputs=[
+                paths.cafe_vs_azul_audio / "cafe__note_e__open.m4a",
+                paths.emulate_azul / "results" / "CURVAS_DENSAS_V10_2.csv",
+            ],
+            outputs=[paths.unified / "_runs" / "process" / "demo_cafe_e__azul.wav"],
+            heavy=False,
+            description="On-demand FIR: any bass audio → Azul transfer (demo on cafe E open)",
+        ),
+        PipelineStage(
             name="unified.fit_azul",
             module="unified",
             command=[py, str(paths.unified / "code" / "cli.py"), "fit-azul"],

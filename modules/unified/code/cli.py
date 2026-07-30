@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unified CLI: audit / summarize / fit Azul(+RC) → optimized Mooer EQ."""
+"""Unified CLI: audit / fit / process any bass audio through Azul±RC→Mooer."""
 from __future__ import annotations
 
 import argparse
@@ -13,6 +13,7 @@ from mooer_fit import fit_mooer_anti_error, save_fit
 from orchestrate import audit, evaluate_mooer, provenance, summarize
 from paths import discover_repo
 from pipeline import plan
+from render_chain import process_file, verify_against_reference
 from targets import azul_rc_target, azul_target
 
 
@@ -78,7 +79,17 @@ def _print_fit(result, paths_written: dict) -> None:
                 "anti_error_score": result.score,
                 "metrics": {
                     k: result.metrics[k]
-                    for k in ("worst", "avg", "global", "Subgraves", "Graves", "Medios", "Presencia", "Brillo", "ae30")
+                    for k in (
+                        "worst",
+                        "avg",
+                        "global",
+                        "Subgraves",
+                        "Graves",
+                        "Medios",
+                        "Presencia",
+                        "Brillo",
+                        "ae30",
+                    )
                     if k in result.metrics
                 },
                 "meta": result.meta,
@@ -91,7 +102,6 @@ def _print_fit(result, paths_written: dict) -> None:
 
 
 def cmd_fit_azul(args: argparse.Namespace) -> int:
-    """Fit Mooer EQ to the Café→Azul curve (anti-error)."""
     target = azul_target(
         variant=args.variant,
         include_gain=not args.timbre_only,
@@ -109,11 +119,6 @@ def cmd_fit_azul(args: argparse.Namespace) -> int:
 
 
 def cmd_fit_azul_rc(args: argparse.Namespace) -> int:
-    """Compose Azul with RC, then fit Mooer anti-error EQ.
-
-    Default compose=minus: if RC is already on, Mooer supplies the residual
-    needed to reach Azul (Azul - RC). Use --compose plus to target Azul+RC.
-    """
     target = azul_rc_target(
         rc_setup=args.rc_setup,
         compose=args.compose,
@@ -132,9 +137,61 @@ def cmd_fit_azul_rc(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_process(args: argparse.Namespace) -> int:
+    """Apply chain to ANY bass audio file on demand (not historical renders)."""
+    paths = discover_repo()
+    out = Path(args.output) if args.output else (
+        paths.unified / "_runs" / "process" / f"{Path(args.input).stem}__{args.chain.replace('+', 'plus')}.wav"
+    )
+    result = process_file(
+        args.input,
+        out,
+        chain=args.chain,
+        azul_variant=args.variant,
+        include_gain=not args.timbre_only,
+        rc_setup=args.rc_setup,
+        mooer_preset=args.mooer_preset,
+        streaming=args.streaming,
+        measure=not args.no_measure,
+        numtaps=args.numtaps,
+        paths=paths,
+    )
+    payload = {
+        "mode": "on_demand_audio",
+        "meta": result.meta,
+        "fidelity_vs_intended_curve": result.fidelity,
+        "measure_csv": str(result.measure_path) if result.measure_path else None,
+        "output": str(result.output_path),
+    }
+    print(json.dumps(payload, indent=2, ensure_ascii=False))
+    return 0
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Process input and compare spectrum to a real reference recording."""
+    stats = verify_against_reference(
+        args.input,
+        args.reference,
+        chain=args.chain,
+        azul_variant=args.variant,
+        include_gain=not args.timbre_only,
+        rc_setup=args.rc_setup,
+        mooer_preset=args.mooer_preset,
+        streaming=args.streaming,
+        measure=True,
+        numtaps=args.numtaps,
+    )
+    print(json.dumps(stats, indent=2, ensure_ascii=False))
+    # Soft quality gate: warn (exit 0) but surface numbers clearly.
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Unified orchestrator: Azul (+ optional RC) → optimized Mooer EQ"
+        description=(
+            "Unified orchestrator: fit Mooer presets AND process any bass audio "
+            "through Azul ± RC → Mooer on demand"
+        )
     )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -155,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument(
         "--timbre-only",
         action="store_true",
-        help="Ignore Azul global gain; fit timbre curve only",
+        help="Ignore Azul global gain; fit/process timbre curve only",
     )
     common.add_argument("--de-seeds", type=int, default=6)
     common.add_argument("--random-starts", type=int, default=800)
@@ -186,6 +243,65 @@ def main(argv: list[str] | None = None) -> int:
         help="minus=Azul-RC (RC already on); plus=Azul+RC cascade target",
     )
     far.set_defaults(func=cmd_fit_azul_rc)
+
+    audio_opts = argparse.ArgumentParser(add_help=False)
+    audio_opts.add_argument(
+        "--variant",
+        default="central",
+        choices=["central", "robust", "safe", "parametric", "total"],
+    )
+    audio_opts.add_argument("--timbre-only", action="store_true")
+    audio_opts.add_argument(
+        "--rc-setup",
+        default="bass",
+        choices=["bass", "hybrid", "guitar"],
+    )
+    audio_opts.add_argument(
+        "--mooer-preset",
+        default=None,
+        help="Preset JSON path or alias: azul|azul_timbre|azul+rc|azul-rc",
+    )
+    audio_opts.add_argument("--numtaps", type=int, default=8193)
+    audio_opts.add_argument(
+        "--streaming",
+        action="store_true",
+        help="Block OLA FIR (near-realtime path). Default=offline fftconvolve (highest fidelity)",
+    )
+    audio_opts.add_argument("--no-measure", action="store_true")
+
+    proc = sub.add_parser(
+        "process",
+        parents=[audio_opts],
+        help="Process ANY bass audio through Azul±RC→Mooer (on demand)",
+    )
+    proc.add_argument("--input", "-i", required=True, help="Any bass audio (wav/m4a/flac/…)")
+    proc.add_argument("--output", "-o", default=None, help="Output wav path")
+    proc.add_argument(
+        "--chain",
+        default="azul",
+        choices=["azul", "azul+rc", "mooer", "rc+mooer"],
+        help=(
+            "azul=apply Café→Azul transfer; "
+            "azul+rc=Azul then RC; "
+            "mooer=single GE300 FIR from preset; "
+            "rc+mooer=RC then Mooer residual"
+        ),
+    )
+    proc.set_defaults(func=cmd_process)
+
+    ver = sub.add_parser(
+        "verify",
+        parents=[audio_opts],
+        help="Process audio and compare spectrum to a real reference recording",
+    )
+    ver.add_argument("--input", "-i", required=True)
+    ver.add_argument("--reference", "-r", required=True, help="Real reference audio (e.g. Azul take)")
+    ver.add_argument(
+        "--chain",
+        default="azul",
+        choices=["azul", "azul+rc", "mooer", "rc+mooer"],
+    )
+    ver.set_defaults(func=cmd_verify)
 
     args = parser.parse_args(argv)
     if hasattr(args, "func"):

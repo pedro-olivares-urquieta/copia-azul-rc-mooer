@@ -43,14 +43,15 @@ python modules/unified/code/cli.py summarize
 python modules/unified/code/cli.py evaluate
 python modules/unified/code/cli.py plan
 
-# Orquestador: curva Azul → EQ Mooer
+# AUDIO REAL (cualquier bajo, on-demand — no renders históricos)
+python modules/unified/code/cli.py process -i audio/cafe_vs_azul/cafe__note_e__open.m4a --chain azul
+python modules/unified/code/cli.py process -i /ruta/tu_bajo.wav --chain mooer --mooer-preset azul+rc
+python modules/unified/code/cli.py process -i /ruta/tu_bajo.wav --chain azul+rc --rc-setup bass
+
+# Fit presets GE300 (anti-error)
 python modules/unified/code/cli.py fit-azul
-
-# Orquestador: Azul + RC boost → EQ Mooer
 python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose plus
-
-# Residual si el RC físico ya está ON (Azul − RC)
-python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus
+python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus --timbre-only
 ```
 
 ## Pipelines heavy (DSP completo)
