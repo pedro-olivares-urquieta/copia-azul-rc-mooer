@@ -1,7 +1,0 @@
-signal,mode,profile,new_path,old_name,sha256,notes
-pink,azul_forced,bass,audio/azul_forced/pink__azul_bass.m4a,Pink azul bass forced.m4a,506a35385dbdd732e33203e91e30c970db910073aa5986c6a4bf277e5bacabed,
-pink,azul_forced,hybrid,audio/azul_forced/pink__azul_hybrid.m4a,Pink azul hybrid forced.m4a,d8eb98bc20413cecca24b79a535bc8bfbf8a1a4abd5b46132147569a8158cbff,
-pink,azul_forced,guitar,audio/azul_forced/pink__azul_guitar.m4a,Pink azul rc guitar forced.m4a,1f235f1628cc35a75da3d7bcc63ad0e8e955cb4fa3eabcff60a36d7bb9849cf8,source filename had extra 'rc' token
-sweep_1_22k,azul_forced,bass,audio/azul_forced/sweep_1_22k__azul_bass.m4a,1 22k azul bass forced.m4a,cbd3c9148b986e50d8823f370a8203f941afe6793a40c8ff342281ccb47e0d85,
-sweep_1_22k,azul_forced,hybrid,audio/azul_forced/sweep_1_22k__azul_hybrid.m4a,1 22k azul hybrid forced.m4a,5d14e82af1e52733fcf9953ded811e3d6f7ca575e404c0edd3b2a868845ee103,
-sweep_1_22k,azul_forced,guitar,audio/azul_forced/sweep_1_22k__azul_guitar.m4a,1 22k azul guitar forced.m4a,76769752e2e184aa52844fa9481029c44476bd164bb46ac9730f5a79dfd02d53,

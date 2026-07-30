@@ -6,7 +6,6 @@ Objetivo: estimar y aplicar la transferencia **Café → Azul** para emular el B
 
 - Pares musicales: [`../../audio/cafe_vs_azul`](../../audio/cafe_vs_azul)
 - Inventario: [`../../manifests/cafe_vs_azul_pairs.csv`](../../manifests/cafe_vs_azul_pairs.csv)
-- Mediciones Azul forced (pink/sweep, uso futuro): [`../../audio/azul_forced`](../../audio/azul_forced)
 
 ## Contenido
 

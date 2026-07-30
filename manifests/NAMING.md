@@ -43,12 +43,3 @@ Ejemplos:
 |---|---|
 | `signal` | `pink`, `sweep_1_22k` |
 | `profile` | `bass`, `hybrid`, `guitar` |
-
-## `audio/azul_forced`
-
-```text
-{signal}__azul_{profile}.m4a
-```
-
-Misma `signal` / `profile` que arriba.  
-Nota: el archivo fuente `Pink azul rc guitar forced.m4a` se normalizó a `pink__azul_guitar.m4a` (el token `rc` era inconsistente).

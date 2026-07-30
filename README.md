@@ -16,7 +16,6 @@ Repositorio organizado en tres módulos independientes con audio y nombres norma
 |---|---|
 | [`audio/cafe_vs_azul`](audio/cafe_vs_azul) | 16 pares Café/Azul (notas, acordes, cromática) |
 | [`audio/rc_response`](audio/rc_response) | Pink + sweep 1–22 kHz, OFF y RC on |
-| [`audio/azul_forced`](audio/azul_forced) | Pink + sweep con Azul forced (bass/hybrid/guitar) |
 
 Convención de nombres: [`manifests/NAMING.md`](manifests/NAMING.md)  
 Mapa old→new: [`manifests/rename_map.csv`](manifests/rename_map.csv)
@@ -25,14 +24,12 @@ Mapa old→new: [`manifests/rename_map.csv`](manifests/rename_map.csv)
 
 - [`manifests/cafe_vs_azul_pairs.csv`](manifests/cafe_vs_azul_pairs.csv)
 - [`manifests/rc_response_inventory.csv`](manifests/rc_response_inventory.csv)
-- [`manifests/azul_forced_inventory.csv`](manifests/azul_forced_inventory.csv)
 
 ## Relación entre módulos
 
 ```text
 audio/cafe_vs_azul  ──►  emulate_azul   (curva Café→Azul)
 audio/rc_response   ──►  rc_pedals      (curvas RC)
-audio/azul_forced   ──►  emulate_azul   (futuro: Azul por pink/sweep)
 rc_pedals curvas    ──►  mooer_eq       (presets GE300)
 ```
 

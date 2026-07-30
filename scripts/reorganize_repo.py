@@ -158,10 +158,10 @@ def normalize_cafe_azul() -> list[dict]:
 
 
 def normalize_fine_tune() -> list[dict]:
+    """Keep only RC response audio. Azul forced presets are discarded."""
     src_dir = ROOT / "Fine tunear rcs y mooer -20260730T192932Z-1-001" / "Fine tunear rcs y mooer"
     rc_dir = ROOT / "audio" / "rc_response"
-    azul_dir = ROOT / "audio" / "azul_forced"
-    ensure_dirs([rc_dir, azul_dir])
+    ensure_dirs([rc_dir])
 
     rc_map = [
         ("Pink.m4a", "pink", "off", "none"),
@@ -173,19 +173,10 @@ def normalize_fine_tune() -> list[dict]:
         ("1 22k rc hybrid on.m4a", "sweep_1_22k", "rc", "hybrid"),
         ("1 22k rc guitar on.m4a", "sweep_1_22k", "rc", "guitar"),
     ]
-    azul_map = [
-        ("Pink azul bass forced.m4a", "pink", "azul_forced", "bass"),
-        ("Pink azul hybrid forced.m4a", "pink", "azul_forced", "hybrid"),
-        ("Pink azul rc guitar forced.m4a", "pink", "azul_forced", "guitar"),  # source had extra "rc"
-        ("1 22k azul bass forced.m4a", "sweep_1_22k", "azul_forced", "bass"),
-        ("1 22k azul hybrid forced.m4a", "sweep_1_22k", "azul_forced", "hybrid"),
-        ("1 22k azul guitar forced.m4a", "sweep_1_22k", "azul_forced", "guitar"),
-    ]
 
     by_name = {nfc(p.name): p for p in src_dir.glob("*.m4a")}
     rename_rows = []
     rc_rows = []
-    azul_rows = []
 
     for old_name, signal, mode, profile in rc_map:
         src = by_name[nfc(old_name)]
@@ -218,44 +209,10 @@ def normalize_fine_tune() -> list[dict]:
             }
         )
 
-    for old_name, signal, mode, profile in azul_map:
-        src = by_name[nfc(old_name)]
-        new_name = f"{signal}__azul_{profile}.m4a"
-        dst = azul_dir / new_name
-        copy_file(src, dst)
-        digest = sha256(dst)
-        azul_rows.append(
-            {
-                "signal": signal,
-                "mode": mode,
-                "profile": profile,
-                "new_path": str(dst.relative_to(ROOT)),
-                "old_name": old_name,
-                "sha256": digest,
-                "notes": "source filename had extra 'rc' token" if " rc " in old_name else "",
-            }
-        )
-        rename_rows.append(
-            {
-                "module": "emulate_azul",
-                "dataset": "azul_forced",
-                "old_path": str(src.relative_to(ROOT)),
-                "new_path": str(dst.relative_to(ROOT)),
-                "old_name": old_name,
-                "new_name": new_name,
-                "sha256": digest,
-            }
-        )
-
     write_csv(
         ROOT / "manifests" / "rc_response_inventory.csv",
         rc_rows,
         ["signal", "mode", "profile", "new_path", "old_name", "sha256"],
-    )
-    write_csv(
-        ROOT / "manifests" / "azul_forced_inventory.csv",
-        azul_rows,
-        ["signal", "mode", "profile", "new_path", "old_name", "sha256", "notes"],
     )
     return rename_rows
 
@@ -465,7 +422,6 @@ def main() -> None:
         [
             ROOT / "audio" / "cafe_vs_azul",
             ROOT / "audio" / "rc_response",
-            ROOT / "audio" / "azul_forced",
             ROOT / "manifests",
             ROOT / "modules" / "emulate_azul",
             ROOT / "modules" / "rc_pedals",
@@ -490,7 +446,6 @@ def main() -> None:
     print("Reorganization complete.")
     print(f"Audio cafe_vs_azul: {len(list((ROOT / 'audio' / 'cafe_vs_azul').glob('*.m4a')))}")
     print(f"Audio rc_response: {len(list((ROOT / 'audio' / 'rc_response').glob('*.m4a')))}")
-    print(f"Audio azul_forced: {len(list((ROOT / 'audio' / 'azul_forced').glob('*.m4a')))}")
 
 
 if __name__ == "__main__":
