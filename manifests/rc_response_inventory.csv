@@ -1,0 +1,9 @@
+signal,mode,profile,new_path,old_name,sha256
+pink,off,none,audio/rc_response/pink__off.m4a,Pink.m4a,7e94239f9d073d27905356ca9127687c49b3de4e2bef4c99462891f24419fd22
+pink,rc,bass,audio/rc_response/pink__rc_bass.m4a,Pink rc bass on.m4a,efece1b91fead0b4929a4021c21bee6b1c9e6356bf1b253083d4b30c88d0a25b
+pink,rc,hybrid,audio/rc_response/pink__rc_hybrid.m4a,Pink rc hybrid on.m4a,5ea93c5d1e6bc8b045529c5f38970ef9a092600961e1e926d64805bdae3fadc7
+pink,rc,guitar,audio/rc_response/pink__rc_guitar.m4a,Pink rc guitar on.m4a,0083c9199907ca03dd6336780b1493ad68fc3eb6ee26195224ffce9222854e42
+sweep_1_22k,off,none,audio/rc_response/sweep_1_22k__off.m4a,1 22k.m4a,e478d7be56bdc7d2f570e99c6dbaca3e652051a95e26df30455b4a20d31aa599
+sweep_1_22k,rc,bass,audio/rc_response/sweep_1_22k__rc_bass.m4a,1 22k rc bass on.m4a,54deabecf1c7eae19036da446628d39b15d0010b4cfee2808f86b80edd72fea0
+sweep_1_22k,rc,hybrid,audio/rc_response/sweep_1_22k__rc_hybrid.m4a,1 22k rc hybrid on.m4a,db430d446727b056035332deeee49eff2fdb75c7ee5138bd8adff6431cd51154
+sweep_1_22k,rc,guitar,audio/rc_response/sweep_1_22k__rc_guitar.m4a,1 22k rc guitar on.m4a,3e964cede2fcf075f4ac54b900a1ec39b26c10478dfdf224f0b8fc7c89b450f5

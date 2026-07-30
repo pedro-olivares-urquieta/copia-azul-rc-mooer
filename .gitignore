@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# OS / Drive junk
+desktop.ini
+Thumbs.db
+.DS_Store
+
+# Editor
+.idea/
+.vscode/
+
+# Local analysis caches / renders
+*.flac
+*.wav
+*.npz
+/tmp/
+.cache/
