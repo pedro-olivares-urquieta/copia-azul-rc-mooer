@@ -51,11 +51,14 @@ python modules/unified/code/cli.py informe
 
 Contenido:
 
-1. Curvas Café→Azul (V10.2)
+1. Curvas Café→Azul (V10.2) + gain
 2. Curvas RC Bajo / Híbrido / Guitarra
-3. 3 presets Mooer anti-error con Q=0.3, freqs locked, **18000 Hz = −16 dB**
+3. Mezcla **Azul(+gain)+RC** = target compuesto
+4. 3 presets Mooer que emulan esa mezcla (Q=0.3, freqs locked, **18000=−16**, global=+3)
 
-Salida: `INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf` + `modules/unified/data/ORCHESTRATED_PRESETS_LOCKED18K.json`
+Fórmula: `target = azul_central + gain_azul + rc_setup`
+
+Salida: `INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf` + `modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json`
 
 ## Etapas heavy (requieren audio + deps DSP)
 

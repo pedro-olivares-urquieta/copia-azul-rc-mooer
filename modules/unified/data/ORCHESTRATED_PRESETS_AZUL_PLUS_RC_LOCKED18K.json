@@ -1,0 +1,119 @@
+{
+  "generated_at_utc": "2026-07-30T22:38:05.768912+00:00",
+  "source": "unified orchestrator — Azul(+gain)+RC mixed into one Mooer preset",
+  "formula": "target_db = azul_central_db + azul_gain_db + rc_setup_db",
+  "constraints": {
+    "frequencies_hz": [
+      30.0,
+      148.0,
+      735.0,
+      3637.0,
+      18000.0
+    ],
+    "q_display": 0.3,
+    "global_gain_db": 3.0,
+    "band_18000_locked_db": -16.0,
+    "objective": "anti_error_minimax_balanced"
+  },
+  "presets": {
+    "Bajo": {
+      "display_name": "Azul+RC Bajo",
+      "rc_setup": "bass",
+      "compose": "azul_plus_rc",
+      "include_azul_gain": true,
+      "azul_gain_db": -10.5914945497307,
+      "gains_display_db": [
+        6.5,
+        -4.0,
+        -10.5,
+        15.5,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 1.929953667132498,
+      "metrics": {
+        "worst": 1.3687079845314032,
+        "avg": 1.0486571492836994,
+        "global": 1.096250612102332,
+        "Subgraves": 0.8919551085336423,
+        "Graves": 0.6247066890952434,
+        "Medios": 1.3687079845314032,
+        "Presencia": 1.0698308999321822,
+        "Brillo": 1.2880850643260258
+      }
+    },
+    "Híbrido": {
+      "display_name": "Azul+RC Híbrido",
+      "rc_setup": "hybrid",
+      "compose": "azul_plus_rc",
+      "include_azul_gain": true,
+      "azul_gain_db": -10.5914945497307,
+      "gains_display_db": [
+        -13.5,
+        0.5,
+        -10.5,
+        15.5,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 1.9580785903577884,
+      "metrics": {
+        "worst": 1.4429675383553233,
+        "avg": 0.9967697273876924,
+        "global": 1.0935687404585708,
+        "Subgraves": 0.4957626823993476,
+        "Graves": 0.6281925405687879,
+        "Medios": 1.4429675383553233,
+        "Presencia": 1.0990463010235496,
+        "Brillo": 1.3178795745914536
+      }
+    },
+    "Guitarra": {
+      "display_name": "Azul+RC Guitarra",
+      "rc_setup": "guitar",
+      "compose": "azul_plus_rc",
+      "include_azul_gain": true,
+      "azul_gain_db": -10.5914945497307,
+      "gains_display_db": [
+        -16.0,
+        -5.5,
+        -4.0,
+        12.0,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 1.9572012876441482,
+      "metrics": {
+        "worst": 1.4179375929202314,
+        "avg": 0.9072746980825727,
+        "global": 1.090738395921534,
+        "Subgraves": 1.4179375929202314,
+        "Graves": 0.6961372398207883,
+        "Medios": 1.402746156024923,
+        "Presencia": 0.7569068025489746,
+        "Brillo": 0.2626456990979458
+      }
+    }
+  }
+}

@@ -46,10 +46,13 @@ python modules/unified/code/cli.py verify \
 Salidas de audio en `modules/unified/_runs/process/` (gitignored).  
 Cada process escribe `*_measured_transfer.csv` (curva medida Welch vs pretendida).
 
-## Informe PDF (Café→Azul → RC → 3 presets Mooer)
+## Informe PDF (Azul+gain mezclado con RC → 1 preset Mooer)
 
-Genera en la **raíz del repo** un PDF ordenado con curvas y los 3 presets
-(Bajo / Híbrido / Guitarra) optimizados anti-error bajo constraints GE300:
+Cada preset **no** es RC aparte ni Azul aparte: es la **mezcla**
+
+`target = Azul(central) + gain_Azul + RC(setup)`
+
+y el GE300 la emula en un solo EQ, con:
 
 - Q display = **0.3**
 - Frecs locked: **30 / 148 / 735 / 3637 / 18000**
@@ -61,7 +64,7 @@ python modules/unified/code/cli.py informe
 # → INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf
 ```
 
-JSON de presets: `modules/unified/data/ORCHESTRATED_PRESETS_LOCKED18K.json`
+JSON: `modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json`
 
 ## CLI — fit presets (curvas → GE300)
 

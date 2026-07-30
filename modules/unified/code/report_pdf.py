@@ -1,4 +1,4 @@
-"""Generate orchestrated PDF report: Café→Azul → RC → 3 Mooer presets (min error)."""
+"""PDF orquestado: Café→Azul + RC → 3 presets Mooer = Azul(+gain)+RC mezclados."""
 from __future__ import annotations
 
 import json
@@ -15,9 +15,9 @@ from matplotlib.backends.backend_pdf import PdfPages
 from bridge import load_azul, load_rc
 from mooer_fit import _load_mooer_model, fit_mooer_anti_error, save_fit
 from paths import RepoPaths, discover_repo
-from targets import rc_target
+from targets import azul_rc_target, azul_target
 
-# GE300 hard constraints for this report
+# GE300 hard constraints
 FREQS = (30.0, 148.0, 735.0, 3637.0, 18000.0)
 Q_DISPLAY = 0.3
 GLOBAL_GAIN = 3.0
@@ -46,12 +46,12 @@ def _style():
 
 
 def _page_text(pdf: PdfPages, title: str, lines: list[str]) -> None:
-    fig = plt.figure(figsize=(11.69, 8.27))  # A4 landscape
+    fig = plt.figure(figsize=(11.69, 8.27))
     fig.text(0.06, 0.92, title, fontsize=18, fontweight="bold", va="top")
     y = 0.84
     for line in lines:
         fig.text(0.06, y, line, fontsize=11, va="top", family="DejaVu Sans")
-        y -= 0.045
+        y -= 0.042
         if y < 0.06:
             break
     pdf.savefig(fig, bbox_inches="tight")
@@ -90,7 +90,7 @@ def _plot_azul(pdf: PdfPages, paths: RepoPaths) -> dict:
     ax.set_xlim(20, 20000)
     ax.set_xlabel("Hz")
     ax.set_ylabel("dB")
-    ax.set_title("Curva total con gain global")
+    ax.set_title("Curva total con gain global (entra al preset)")
     ax.legend(loc="best", fontsize=8)
 
     ax = axes[1, 0]
@@ -116,7 +116,6 @@ def _plot_azul(pdf: PdfPages, paths: RepoPaths) -> dict:
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     pdf.savefig(fig)
     plt.close(fig)
-
     return {
         "gain_recommended_db": gain,
         "curve_min_db": float(np.min(central)),
@@ -130,7 +129,7 @@ def _plot_rc(pdf: PdfPages, paths: RepoPaths) -> dict:
     f = curves.frequency_hz
 
     fig, axes = plt.subplots(2, 2, figsize=(11.69, 8.27))
-    fig.suptitle("2. Respuestas RC (pink+sweep fusionadas)", fontsize=14, fontweight="bold")
+    fig.suptitle("2. Respuestas RC (se mezclan con Azul en el preset)", fontsize=14, fontweight="bold")
 
     ax = axes[0, 0]
     for key, label in SETUP_LABELS.items():
@@ -139,18 +138,18 @@ def _plot_rc(pdf: PdfPages, paths: RepoPaths) -> dict:
     ax.set_xlim(20, 20000)
     ax.set_xlabel("Hz")
     ax.set_ylabel("dB")
-    ax.set_title("Curvas recomendadas (analógicas)")
+    ax.set_title("Curvas RC recomendadas")
     ax.legend(fontsize=8)
 
     for ax, key, title in (
-        (axes[0, 1], "bass", "Bajo — detalle"),
-        (axes[1, 0], "hybrid", "Híbrido — detalle"),
-        (axes[1, 1], "guitar", "Guitarra — detalle"),
+        (axes[0, 1], "bass", "Bajo"),
+        (axes[1, 0], "hybrid", "Híbrido"),
+        (axes[1, 1], "guitar", "Guitarra"),
     ):
         y = curves.setup_db(key)
         u = curves.uncertainties[key]
-        ax.semilogx(f, y, lw=1.6, label="recomendado")
-        ax.fill_between(f, y - u, y + u, alpha=0.25, label="± incertidumbre")
+        ax.semilogx(f, y, lw=1.6, label="RC")
+        ax.fill_between(f, y - u, y + u, alpha=0.25, label="± unc")
         ax.axhline(0, color="k", lw=0.6)
         ax.set_xlim(20, 20000)
         ax.set_xlabel("Hz")
@@ -173,6 +172,54 @@ def _plot_rc(pdf: PdfPages, paths: RepoPaths) -> dict:
     return summary
 
 
+def _plot_composition(pdf: PdfPages, paths: RepoPaths, azul_gain: float) -> None:
+    """Show Azul + RC = target compuesto (lo que el Mooer debe emular)."""
+    azul = azul_target(variant="central", include_gain=True, paths=paths)
+    rc = load_rc(paths)
+    curves = rc.load_refined_curves()
+    f = curves.frequency_hz
+    azul_y = np.interp(np.log(f), np.log(azul.frequency_hz), azul.target_db)
+
+    fig, axes = plt.subplots(2, 2, figsize=(11.69, 8.27))
+    fig.suptitle(
+        f"2b. Mezcla Azul(+gain {azul_gain:+.2f} dB) + RC  →  target del preset Mooer",
+        fontsize=13,
+        fontweight="bold",
+    )
+
+    ax = axes[0, 0]
+    ax.semilogx(f, azul_y, label="Azul (+gain)", lw=1.8, color="#c45c26")
+    for key, label in SETUP_LABELS.items():
+        ax.semilogx(f, curves.setup_db(key), label=f"RC {label}", lw=1.2, alpha=0.85)
+    ax.axhline(0, color="k", lw=0.5)
+    ax.set_xlim(20, 20000)
+    ax.set_title("Componentes por separado")
+    ax.set_xlabel("Hz")
+    ax.set_ylabel("dB")
+    ax.legend(fontsize=7)
+
+    for ax, key, label in (
+        (axes[0, 1], "bass", "Bajo"),
+        (axes[1, 0], "hybrid", "Híbrido"),
+        (axes[1, 1], "guitar", "Guitarra"),
+    ):
+        rc_y = curves.setup_db(key)
+        mixed = azul_y + rc_y
+        ax.semilogx(f, azul_y, label="Azul", lw=1.2, alpha=0.7)
+        ax.semilogx(f, rc_y, label="RC", lw=1.2, alpha=0.7)
+        ax.semilogx(f, mixed, label="Azul+RC (target)", lw=2.0, color="#1b6ca8")
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_xlim(20, 20000)
+        ax.set_xlabel("Hz")
+        ax.set_ylabel("dB")
+        ax.set_title(f"Target compuesto → preset {label}")
+        ax.legend(fontsize=7)
+
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    pdf.savefig(fig)
+    plt.close(fig)
+
+
 def _fit_three_presets(
     paths: RepoPaths,
     *,
@@ -180,12 +227,20 @@ def _fit_three_presets(
     random_starts: int,
     seed: int,
 ) -> dict[str, dict]:
+    """Fit Mooer to Azul(+gain)+RC for each setup — one mixed preset each."""
     mm = _load_mooer_model()
-    out_dir = paths.unified / "data" / "fits" / "report_locked18k"
+    out_dir = paths.unified / "data" / "fits" / "report_azul_plus_rc_locked18k"
     out_dir.mkdir(parents=True, exist_ok=True)
     results = {}
     for setup, label in SETUP_LABELS.items():
-        target = rc_target(rc_setup=setup, paths=paths)
+        # KEY: composed target = Azul (with gain) + RC  → single Mooer preset
+        target = azul_rc_target(
+            rc_setup=setup,
+            compose="plus",
+            azul_variant="central",
+            include_gain=True,
+            paths=paths,
+        )
         fit = fit_mooer_anti_error(
             target,
             de_seeds=de_seeds,
@@ -193,12 +248,12 @@ def _fit_three_presets(
             seed=seed,
             locked_gains_db=LOCKED,
         )
-        # Force name to Spanish preset label for artifacts
-        fit.target_name = f"mooer_{setup}_locked18k"
+        fit.target_name = f"azul_plus_rc_{setup}_locked18k"
         written = save_fit(fit, target, out_dir)
         y = mm.preset_response_db(target.frequency_hz, fit.gains_display_db, mm.DEFAULT_MODEL)
         results[setup] = {
-            "label": label,
+            "label": f"Azul+RC {label}",
+            "short_label": label,
             "fit": fit,
             "target": target,
             "mooer_db": y,
@@ -211,15 +266,14 @@ def _fit_three_presets(
 def _plot_presets_overview(pdf: PdfPages, results: dict[str, dict]) -> None:
     fig = plt.figure(figsize=(11.69, 8.27))
     fig.suptitle(
-        "3. Presets Mooer GE300 — mínimo error anti-error\n"
+        "3. Presets Mooer = Azul(+gain) + RC  (mínimo error)\n"
         f"Q={Q_DISPLAY} · f=[{', '.join(str(int(x)) for x in FREQS)}] · "
         f"global=+{GLOBAL_GAIN:.0f} dB · 18000 Hz={LOCK_18K_DB:.0f} dB (lock)",
-        fontsize=13,
+        fontsize=12,
         fontweight="bold",
     )
 
-    ax = fig.add_axes([0.06, 0.42, 0.88, 0.42])
-    # Table
+    ax = fig.add_axes([0.04, 0.42, 0.92, 0.42])
     cols = ["Preset", "30 Hz", "148 Hz", "735 Hz", "3637 Hz", "18000 Hz", "Score", "Worst", "Global"]
     cell = []
     for setup in ("bass", "hybrid", "guitar"):
@@ -242,13 +296,13 @@ def _plot_presets_overview(pdf: PdfPages, results: dict[str, dict]) -> None:
     ax.axis("off")
     table = ax.table(cellText=cell, colLabels=cols, loc="center", cellLoc="center")
     table.auto_set_font_size(False)
-    table.set_fontsize(9)
+    table.set_fontsize(8.5)
     table.scale(1.0, 1.6)
     for (row, col), cell_obj in table.get_celld().items():
         if row == 0:
             cell_obj.set_facecolor("#2f4f4f")
             cell_obj.set_text_props(color="white", fontweight="bold")
-        elif col == 5:  # locked 18k
+        elif col == 5:
             cell_obj.set_facecolor("#ffe8d6")
 
     ax2 = fig.add_axes([0.08, 0.08, 0.84, 0.28])
@@ -262,7 +316,7 @@ def _plot_presets_overview(pdf: PdfPages, results: dict[str, dict]) -> None:
     ax2.axhline(0, color="k", lw=0.6)
     ax2.axhline(LOCK_18K_DB, color="r", ls="--", lw=0.8, label="lock 18 kHz")
     ax2.set_ylabel("Gain display (dB)")
-    ax2.set_title("Ganancias por banda")
+    ax2.set_title("Ganancias por banda (un solo preset emula Azul+RC)")
     ax2.legend(fontsize=8, ncol=4)
     pdf.savefig(fig)
     plt.close(fig)
@@ -277,22 +331,24 @@ def _plot_each_preset(pdf: PdfPages, results: dict[str, dict]) -> None:
         mooer = r["mooer_db"]
         err = mooer - target
         g = r["fit"].gains_display_db
+        azul_gain = float(t.meta.get("gain_db", 0.0))
 
         fig, axes = plt.subplots(2, 2, figsize=(11.69, 8.27))
         fig.suptitle(
-            f"Preset {r['label']} — target RC vs Mooer (score={r['fit'].score:.3f})",
-            fontsize=13,
+            f"Preset {r['label']} — target Azul(+gain)+RC vs Mooer  "
+            f"(score={r['fit'].score:.3f}, Azul gain={azul_gain:+.2f} dB)",
+            fontsize=12,
             fontweight="bold",
         )
 
         ax = axes[0, 0]
-        ax.semilogx(f, target, label="RC target", lw=1.8)
+        ax.semilogx(f, target, label="Target Azul+RC", lw=1.8)
         ax.semilogx(f, mooer, label="Mooer GE300", lw=1.5, ls="--")
         ax.axhline(0, color="k", lw=0.5)
         ax.set_xlim(20, 20000)
         ax.set_xlabel("Hz")
         ax.set_ylabel("dB")
-        ax.set_title("Curva completa")
+        ax.set_title("Curva completa (mezcla)")
         ax.legend(fontsize=8)
 
         ax = axes[0, 1]
@@ -301,11 +357,11 @@ def _plot_each_preset(pdf: PdfPages, results: dict[str, dict]) -> None:
         ax.set_xlim(20, 15500)
         ax.set_xlabel("Hz")
         ax.set_ylabel("dB")
-        ax.set_title("Error (Mooer − target)")
+        ax.set_title("Error (Mooer − Azul−RC)")
 
         ax = axes[1, 0]
         m = f <= 250
-        ax.plot(f[m], target[m], label="RC")
+        ax.plot(f[m], target[m], label="Azul+RC")
         ax.plot(f[m], mooer[m], label="Mooer", ls="--")
         ax.set_xlabel("Hz")
         ax.set_ylabel("dB")
@@ -316,15 +372,19 @@ def _plot_each_preset(pdf: PdfPages, results: dict[str, dict]) -> None:
         ax.axis("off")
         metrics = r["fit"].metrics
         lines = [
+            "Target = Azul(central + gain) + RC",
+            f"RC setup: {setup}",
+            f"Azul gain incluido: {azul_gain:+.2f} dB",
+            "",
             f"Gains display: {g}",
-            f"Freqs: {list(FREQS)}",
+            f"Freqs locked: {list(FREQS)}",
             f"Q display: {Q_DISPLAY} (lock)",
             f"Global: +{GLOBAL_GAIN:.0f} dB (lock)",
             f"18000 Hz: {g[4]:+.1f} dB (lock)",
             "",
             f"Anti-error score: {r['fit'].score:.4f}",
-            f"Worst regional RMSE: {metrics['worst']:.4f} dB",
-            f"Avg regional RMSE: {metrics['avg']:.4f} dB",
+            f"Worst RMSE: {metrics['worst']:.4f} dB",
+            f"Avg RMSE: {metrics['avg']:.4f} dB",
             f"Global RMSE: {metrics['global']:.4f} dB",
             "",
             "RMSE por región:",
@@ -334,7 +394,7 @@ def _plot_each_preset(pdf: PdfPages, results: dict[str, dict]) -> None:
                 lines.append(f"  {name}: {metrics[name]:.4f} dB")
         ax.text(0.02, 0.98, "\n".join(lines), va="top", family="DejaVu Sans", fontsize=9)
 
-        fig.tight_layout(rect=[0, 0, 1, 0.95])
+        fig.tight_layout(rect=[0, 0, 1, 0.94])
         pdf.savefig(fig)
         plt.close(fig)
 
@@ -342,7 +402,8 @@ def _plot_each_preset(pdf: PdfPages, results: dict[str, dict]) -> None:
 def _write_presets_json(paths: RepoPaths, results: dict[str, dict]) -> Path:
     payload = {
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "source": "unified orchestrator report",
+        "source": "unified orchestrator — Azul(+gain)+RC mixed into one Mooer preset",
+        "formula": "target_db = azul_central_db + azul_gain_db + rc_setup_db",
         "constraints": {
             "frequencies_hz": list(FREQS),
             "q_display": Q_DISPLAY,
@@ -354,8 +415,13 @@ def _write_presets_json(paths: RepoPaths, results: dict[str, dict]) -> Path:
     }
     for setup in ("bass", "hybrid", "guitar"):
         r = results[setup]
-        payload["presets"][r["label"]] = {
+        label = r["short_label"]
+        payload["presets"][label] = {
+            "display_name": r["label"],
             "rc_setup": setup,
+            "compose": "azul_plus_rc",
+            "include_azul_gain": True,
+            "azul_gain_db": float(r["target"].meta.get("gain_db", 0.0)),
             "gains_display_db": r["fit"].gains_display_db,
             "q_display": [Q_DISPLAY] * 5,
             "global_gain_db": GLOBAL_GAIN,
@@ -375,23 +441,25 @@ def _write_presets_json(paths: RepoPaths, results: dict[str, dict]) -> Path:
                 if k in r["fit"].metrics
             },
         }
-    out = paths.unified / "data" / "ORCHESTRATED_PRESETS_LOCKED18K.json"
+    out = paths.unified / "data" / "ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json"
     out.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    # Also mirror into mooer_eq for operational use
-    mooer_out = paths.mooer_eq / "data" / "PRESETS_ORQUESTADOR_LOCKED18K.json"
+    # Mirror operational JSON
+    mooer_out = paths.mooer_eq / "data" / "PRESETS_ORQUESTADOR_AZUL_PLUS_RC_LOCKED18K.json"
     mooer_payload = {
         "global_gain_db": GLOBAL_GAIN,
         "frequencies_hz": list(FREQS),
         "q_display": [Q_DISPLAY] * 5,
         "band_18000_locked_db": LOCK_18K_DB,
+        "formula": "Azul(central+gain) + RC → one GE300 preset",
         "presets": {
             label: {
                 "gains_display_db": payload["presets"][label]["gains_display_db"],
                 "anti_error_score": payload["presets"][label]["anti_error_score"],
+                "azul_gain_db": payload["presets"][label]["azul_gain_db"],
                 "reason": (
-                    "Optimizado por unified (anti-error) con Q=0.3, "
-                    "freqs locked y 18000 Hz = -16 dB."
+                    "Un solo preset GE300 emula Azul(+gain) + RC. "
+                    "Q=0.3, freqs locked, 18000 Hz=-16 dB, global=+3 dB."
                 ),
             }
             for label in ("Bajo", "Híbrido", "Guitarra")
@@ -409,7 +477,7 @@ def generate_report(
     seed: int = 20260730,
     paths: RepoPaths | None = None,
 ) -> dict:
-    """Fit 3 RC→Mooer presets (18k locked) and write the ordered PDF at repo root."""
+    """Fit 3 mixed Azul(+gain)+RC → Mooer presets and write ordered PDF at repo root."""
     _style()
     paths = paths or discover_repo()
     if output_pdf is None:
@@ -424,13 +492,20 @@ def generate_report(
     with PdfPages(output_pdf) as pdf:
         _page_text(
             pdf,
-            "Informe orquestador — Azul · RC · Mooer GE300",
+            "Informe orquestador — Azul + RC → preset Mooer único",
             [
                 f"Generado: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}",
+                "",
+                "Idea clave: NO son dos EQs aparte.",
+                "Cada preset Mooer emula la MEZCLA:",
+                "    target = Azul(central) + gain_Azul + RC(setup)",
+                "Así el RC 'nuevo' ya lleva el Azul (y su ganancia) adentro.",
+                "",
                 "Orden del informe:",
-                "  1) Transferencia Café → Azul (curvas V10.2)",
-                "  2) Respuestas de pedales RC (Bajo / Híbrido / Guitarra)",
-                "  3) Tres presets Mooer GE300 de mínimo error",
+                "  1) Transferencia Café → Azul (curvas + gain)",
+                "  2) Respuestas RC Bajo / Híbrido / Guitarra",
+                "  2b) Mezcla Azul(+gain)+RC = target compuesto",
+                "  3) Tres presets Mooer GE300 de mínimo error sobre esa mezcla",
                 "",
                 "Constraints GE300 (hard):",
                 f"  · Frecuencias locked: {', '.join(str(int(x)) for x in FREQS)} Hz",
@@ -438,19 +513,16 @@ def generate_report(
                 f"  · Global gain locked: +{GLOBAL_GAIN:.0f} dB",
                 f"  · Banda 18000 Hz locked: {LOCK_18K_DB:.0f} dB",
                 "  · Gains display: −16 … +16 dB, step 0.5",
-                "",
-                "Objetivo: anti-error (worst regional RMSE + penalties).",
-                "Los presets se optimizan desde las curvas RC medidas (no histórico fijo).",
             ],
         )
         azul_sum = _plot_azul(pdf, paths)
         rc_sum = _plot_rc(pdf, paths)
+        _plot_composition(pdf, paths, azul_sum["gain_recommended_db"])
         _plot_presets_overview(pdf, results)
         _plot_each_preset(pdf, results)
 
-        # Closing summary page
         lines = [
-            "Resumen ejecutivo de presets (gains display dB):",
+            "Cada preset = un GE300 que lleva Azul(+gain) + RC juntos:",
             "",
         ]
         for setup in ("bass", "hybrid", "guitar"):
@@ -462,28 +534,31 @@ def generate_report(
             )
         lines += [
             "",
-            f"Azul gain global recomendado: {azul_sum['gain_recommended_db']:+.2f} dB",
-            f"Artefactos JSON: {presets_json}",
+            f"Azul gain incluido en el target: {azul_sum['gain_recommended_db']:+.2f} dB",
+            f"JSON: {presets_json}",
             f"PDF: {output_pdf}",
         ]
-        _page_text(pdf, "4. Cierre — presets listos para GE300", lines)
+        _page_text(pdf, "4. Cierre — presets Azul+RC listos para GE300", lines)
 
         d = pdf.infodict()
-        d["Title"] = "Informe orquestador Azul RC Mooer"
+        d["Title"] = "Informe orquestador Azul+RC → Mooer"
         d["Author"] = "unified orchestrator"
-        d["Subject"] = "Café→Azul, RC curves, Mooer presets locked 18k=-16"
+        d["Subject"] = "Mixed Azul(+gain)+RC presets, 18k=-16, Q=0.3"
 
     summary = {
         "pdf": str(output_pdf),
         "presets_json": str(presets_json),
+        "formula": "target = azul_central + azul_gain + rc_setup",
         "azul": azul_sum,
         "rc": rc_sum,
         "presets": {
-            results[s]["label"]: {
+            results[s]["short_label"]: {
+                "display_name": results[s]["label"],
                 "gains_display_db": results[s]["fit"].gains_display_db,
                 "score": results[s]["fit"].score,
                 "worst": results[s]["fit"].metrics["worst"],
                 "global": results[s]["fit"].metrics["global"],
+                "azul_gain_db": float(results[s]["target"].meta.get("gain_db", 0.0)),
             }
             for s in ("bass", "hybrid", "guitar")
         },

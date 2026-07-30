@@ -1,6 +1,7 @@
 {
   "pdf": "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf",
-  "presets_json": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_LOCKED18K.json",
+  "presets_json": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json",
+  "formula": "target = azul_central + azul_gain + rc_setup",
   "azul": {
     "gain_recommended_db": -10.5914945497307,
     "curve_min_db": -2.7339936176254525,
@@ -25,40 +26,46 @@
   },
   "presets": {
     "Bajo": {
-      "gains_display_db": [
-        16.0,
-        -7.0,
-        12.5,
-        16.0,
-        -16.0
-      ],
-      "score": 8.726275635754618,
-      "worst": 6.40711790918615,
-      "global": 4.620875176533901
-    },
-    "Híbrido": {
+      "display_name": "Azul+RC Bajo",
       "gains_display_db": [
         6.5,
-        -12.0,
-        16.0,
-        16.0,
+        -4.0,
+        -10.5,
+        15.5,
         -16.0
       ],
-      "score": 7.847580399305915,
-      "worst": 5.911997378634369,
-      "global": 4.14492341198925
+      "score": 1.929953667132498,
+      "worst": 1.3687079845314032,
+      "global": 1.096250612102332,
+      "azul_gain_db": -10.5914945497307
+    },
+    "Híbrido": {
+      "display_name": "Azul+RC Híbrido",
+      "gains_display_db": [
+        -13.5,
+        0.5,
+        -10.5,
+        15.5,
+        -16.0
+      ],
+      "score": 1.9580785903577884,
+      "worst": 1.4429675383553233,
+      "global": 1.0935687404585708,
+      "azul_gain_db": -10.5914945497307
     },
     "Guitarra": {
+      "display_name": "Azul+RC Guitarra",
       "gains_display_db": [
-        -1.0,
-        -11.0,
-        16.0,
-        16.0,
+        -16.0,
+        -5.5,
+        -4.0,
+        12.0,
         -16.0
       ],
-      "score": 7.630869354378384,
-      "worst": 5.728778012728752,
-      "global": 4.034871416446913
+      "score": 1.9572012876441482,
+      "worst": 1.4179375929202314,
+      "global": 1.090738395921534,
+      "azul_gain_db": -10.5914945497307
     }
   },
   "constraints": {
