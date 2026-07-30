@@ -87,6 +87,31 @@ def azul_target(
     )
 
 
+def rc_target(
+    *,
+    rc_setup: str = "bass",
+    frequency_hz: np.ndarray | None = None,
+    paths: RepoPaths | None = None,
+) -> FitTarget:
+    """Target = measured RC pedal response (bass|hybrid|guitar)."""
+    if rc_setup not in {"bass", "hybrid", "guitar"}:
+        raise ValueError("rc_setup must be bass|hybrid|guitar")
+    paths = paths or discover_repo()
+    rc = load_rc(paths)
+    curves = rc.load_refined_curves()
+    freq = np.asarray(frequency_hz if frequency_hz is not None else curves.frequency_hz, dtype=float)
+    y = _interp_log(curves.frequency_hz, curves.setup_db(rc_setup), freq)
+    u = _interp_log(curves.frequency_hz, curves.uncertainties[rc_setup], freq)
+    u = np.maximum(u, 0.08)
+    return FitTarget(
+        name=f"rc_{rc_setup}",
+        frequency_hz=freq,
+        target_db=y,
+        uncertainty_db=u,
+        meta={"mode": "rc", "rc_setup": rc_setup},
+    )
+
+
 def azul_rc_target(
     *,
     rc_setup: str = "bass",

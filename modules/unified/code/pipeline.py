@@ -126,6 +126,27 @@ def list_stages(paths: RepoPaths | None = None) -> list[PipelineStage]:
             description="On-demand FIR: any bass audio → Azul transfer (demo on cafe E open)",
         ),
         PipelineStage(
+            name="unified.informe",
+            module="unified",
+            command=[
+                py,
+                str(paths.unified / "code" / "cli.py"),
+                "informe",
+                "-o",
+                str(paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf"),
+            ],
+            inputs=[
+                paths.emulate_azul / "results" / "CURVAS_DENSAS_V10_2.csv",
+                paths.rc_pedals / "data" / "refined_curves_192ppo.csv",
+            ],
+            outputs=[
+                paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf",
+                paths.unified / "data" / "ORCHESTRATED_PRESETS_LOCKED18K.json",
+            ],
+            heavy=False,
+            description="PDF report: Azul + RC + 3 Mooer presets (Q=0.3, 18k=-16)",
+        ),
+        PipelineStage(
             name="unified.fit_azul",
             module="unified",
             command=[py, str(paths.unified / "code" / "cli.py"), "fit-azul"],

@@ -1,0 +1,106 @@
+{
+  "generated_at_utc": "2026-07-30T22:12:01.279346+00:00",
+  "source": "unified orchestrator report",
+  "constraints": {
+    "frequencies_hz": [
+      30.0,
+      148.0,
+      735.0,
+      3637.0,
+      18000.0
+    ],
+    "q_display": 0.3,
+    "global_gain_db": 3.0,
+    "band_18000_locked_db": -16.0,
+    "objective": "anti_error_minimax_balanced"
+  },
+  "presets": {
+    "Bajo": {
+      "rc_setup": "bass",
+      "gains_display_db": [
+        16.0,
+        -7.0,
+        12.5,
+        16.0,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 8.726275635754618,
+      "metrics": {
+        "worst": 6.40711790918615,
+        "avg": 4.263410167468542,
+        "global": 4.620875176533901,
+        "Subgraves": 3.0703036830687,
+        "Graves": 2.0075121724161815,
+        "Medios": 6.40711790918615,
+        "Presencia": 3.4259215672284946,
+        "Brillo": 6.406195505443184
+      }
+    },
+    "Híbrido": {
+      "rc_setup": "hybrid",
+      "gains_display_db": [
+        6.5,
+        -12.0,
+        16.0,
+        16.0,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 7.847580399305915,
+      "metrics": {
+        "worst": 5.911997378634369,
+        "avg": 3.6645906618095347,
+        "global": 4.14492341198925,
+        "Subgraves": 1.1097462809710765,
+        "Graves": 1.577353441305468,
+        "Medios": 5.815611992279794,
+        "Presencia": 3.9082442158569686,
+        "Brillo": 5.911997378634369
+      }
+    },
+    "Guitarra": {
+      "rc_setup": "guitar",
+      "gains_display_db": [
+        -1.0,
+        -11.0,
+        16.0,
+        16.0,
+        -16.0
+      ],
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "global_gain_db": 3.0,
+      "anti_error_score": 7.630869354378384,
+      "metrics": {
+        "worst": 5.728778012728752,
+        "avg": 3.591777481806848,
+        "global": 4.034871416446913,
+        "Subgraves": 1.1888214695160473,
+        "Graves": 1.4270838534404275,
+        "Medios": 5.6497205532755475,
+        "Presencia": 3.964483520073465,
+        "Brillo": 5.728778012728752
+      }
+    }
+  }
+}

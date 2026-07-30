@@ -65,7 +65,6 @@ def _response_from_idx(bank, idx, global_gain: float) -> np.ndarray:
 
 def _scores_batch(mm, freq, Y, target, unc) -> np.ndarray:
     """Vectorized anti-error scores for many responses Y shape (n, f)."""
-    # Regional masks
     regions = mm.REGIONS
     e = Y - target[None, :]
     rr = []
@@ -74,7 +73,7 @@ def _scores_batch(mm, freq, Y, target, unc) -> np.ndarray:
         w = 1.0 / (unc[m] ** 2 + 0.12**2)
         w = w / w.sum()
         rr.append(np.sqrt(np.sum(w[None, :] * e[:, m] ** 2, axis=1)))
-    rr = np.stack(rr, axis=1)  # (n, 5)
+    rr = np.stack(rr, axis=1)
     worst = rr.max(axis=1)
     avg = rr.mean(axis=1)
     w = 1.0 / (unc**2 + 0.12**2)
@@ -107,13 +106,37 @@ def _metrics_one(mm, freq, y, target, unc) -> dict:
     return metrics
 
 
-def _coordinate_descent(bank, idx, freq, target, unc, mm, global_gain: float, rounds: int = 10):
+def _gain_to_idx(gvals: np.ndarray, gain_db: float) -> int:
+    return int(np.argmin(np.abs(gvals - float(gain_db))))
+
+
+def _apply_locks(idx: np.ndarray, locked_idx: dict[int, int]) -> np.ndarray:
+    out = np.asarray(idx, dtype=int).copy()
+    for band, j in locked_idx.items():
+        out[int(band)] = int(j)
+    return out
+
+
+def _coordinate_descent(
+    bank,
+    idx,
+    freq,
+    target,
+    unc,
+    mm,
+    global_gain: float,
+    rounds: int = 10,
+    locked_bands: set[int] | None = None,
+):
+    locked_bands = locked_bands or set()
     idx = np.asarray(idx, dtype=int).copy()
     y = _response_from_idx(bank, idx, global_gain)
     best_s = float(_scores_batch(mm, freq, y[None, :], target, unc)[0])
     for _ in range(rounds):
         improved = False
         for band in range(5):
+            if band in locked_bands:
+                continue
             base = y - bank[band, idx[band]]
             Y = base[None, :] + bank[band]
             scores = _scores_batch(mm, freq, Y, target, unc)
@@ -128,15 +151,25 @@ def _coordinate_descent(bank, idx, freq, target, unc, mm, global_gain: float, ro
     return idx, best_s, y
 
 
-def _pairwise_polish(bank, idx, freq, target, unc, mm, global_gain: float):
+def _pairwise_polish(
+    bank,
+    idx,
+    freq,
+    target,
+    unc,
+    mm,
+    global_gain: float,
+    locked_bands: set[int] | None = None,
+):
+    locked_bands = locked_bands or set()
     idx = np.asarray(idx, dtype=int).copy()
     y = _response_from_idx(bank, idx, global_gain)
     best_s = float(_scores_batch(mm, freq, y[None, :], target, unc)[0])
     n = bank.shape[1]
-    for a in range(5):
-        for b in range(a + 1, 5):
+    free = [i for i in range(5) if i not in locked_bands]
+    for ai, a in enumerate(free):
+        for b in free[ai + 1 :]:
             base = y - bank[a, idx[a]] - bank[b, idx[b]]
-            # Coarse 1 dB grid first.
             ias = range(0, n, 2)
             ibs = range(0, n, 2)
             local = (idx[a], idx[b], best_s)
@@ -147,7 +180,6 @@ def _pairwise_polish(bank, idx, freq, target, unc, mm, global_gain: float):
                 ib = list(ibs)[j]
                 if scores[j] < local[2]:
                     local = (ia, ib, float(scores[j]))
-            # Fine ±1 around coarse winner.
             for ia in range(max(0, local[0] - 1), min(n, local[0] + 2)):
                 Y = base[None, :] + bank[a, ia][None, :] + bank[b]
                 lo = max(0, local[1] - 1)
@@ -169,8 +201,13 @@ def fit_mooer_anti_error(
     de_seeds: int = 6,
     random_starts: int = 800,
     seed: int = 20260730,
+    locked_gains_db: dict[int, float] | None = None,
 ) -> FitResult:
-    """Fit GE300 discrete gains to a target with anti-error objective."""
+    """Fit GE300 discrete gains with anti-error objective.
+
+    ``locked_gains_db`` maps band index → display dB (e.g. ``{4: -16.0}`` locks 18 kHz).
+    Frequencies locked 30/148/735/3637/18000, Q display 0.3, global +3 dB.
+    """
     mm = _load_mooer_model()
     freq = np.asarray(target.frequency_hz, dtype=float)
     mask = (freq >= 20) & (freq <= 15500)
@@ -181,6 +218,10 @@ def fit_mooer_anti_error(
     bank, gvals, model = _build_bank(mm, f)
     rng = np.random.default_rng(seed)
 
+    locked_gains_db = dict(locked_gains_db or {})
+    locked_idx = {int(b): _gain_to_idx(gvals, g) for b, g in locked_gains_db.items()}
+    locked_bands = set(locked_idx)
+
     starts = [np.zeros(5, dtype=int)]
     for preset in (
         [15.0, 3.5, -3.5, 16.0, -3.5],
@@ -189,39 +230,69 @@ def fit_mooer_anti_error(
         [8.0, 2.0, 0.0, 8.0, 0.0],
         [0.0, 2.0, 0.0, 10.0, 0.0],
         [-8.0, 4.0, 2.0, 10.0, 0.0],
+        [16.0, 4.0, -2.0, 16.0, -16.0],
+        [0.0, 4.0, 2.0, 12.0, -16.0],
+        [-8.0, 6.0, 2.0, 12.0, -16.0],
     ):
         starts.append(np.clip(np.round((np.asarray(preset) + 16) * 2).astype(int), 0, len(gvals) - 1))
 
     for _ in range(random_starts):
         starts.append(rng.integers(0, len(gvals), size=5))
 
-    def continuous_obj(g):
+    starts = [_apply_locks(s, locked_idx) for s in starts]
+    free_bands = [i for i in range(5) if i not in locked_bands]
+
+    def continuous_obj(x):
+        g = np.zeros(5)
+        for band, val in locked_gains_db.items():
+            g[int(band)] = float(val)
+        for k, band in enumerate(free_bands):
+            g[band] = float(x[k])
         y = mm.preset_response_db(f, g, model)
         return float(_scores_batch(mm, f, y[None, :], t, u)[0])
 
-    for s_i in range(de_seeds):
-        res = differential_evolution(
-            continuous_obj,
-            bounds=[(model.gain_min_db, model.gain_max_db)] * 5,
-            seed=seed + s_i,
-            popsize=4,
-            maxiter=12,
-            tol=1e-4,
-            polish=True,
-        )
-        q = np.clip(np.round(res.x * 2) / 2, model.gain_min_db, model.gain_max_db)
-        starts.append(np.clip(np.round((q + 16) * 2).astype(int), 0, len(gvals) - 1))
+    if free_bands:
+        bounds = [(model.gain_min_db, model.gain_max_db)] * len(free_bands)
+        for s_i in range(de_seeds):
+            res = differential_evolution(
+                continuous_obj,
+                bounds=bounds,
+                seed=seed + s_i,
+                popsize=4,
+                maxiter=12,
+                tol=1e-4,
+                polish=True,
+            )
+            g = np.zeros(5)
+            for band, val in locked_gains_db.items():
+                g[int(band)] = float(val)
+            for k, band in enumerate(free_bands):
+                g[band] = float(res.x[k])
+            q = np.clip(np.round(g * 2) / 2, model.gain_min_db, model.gain_max_db)
+            starts.append(
+                _apply_locks(
+                    np.clip(np.round((q + 16) * 2).astype(int), 0, len(gvals) - 1),
+                    locked_idx,
+                )
+            )
 
     candidates = []
     for start in starts:
-        idx, score, y = _coordinate_descent(bank, start, f, t, u, mm, model.global_gain_db)
+        start = _apply_locks(start, locked_idx)
+        idx, score, y = _coordinate_descent(
+            bank, start, f, t, u, mm, model.global_gain_db, locked_bands=locked_bands
+        )
         candidates.append((score, idx.copy(), y))
 
     candidates.sort(key=lambda x: x[0])
-    # Polish only the best few.
     best = None
     for score, idx, y in candidates[:20]:
-        idx2, score2, y2 = _pairwise_polish(bank, idx, f, t, u, mm, model.global_gain_db)
+        idx2, score2, y2 = _pairwise_polish(
+            bank, idx, f, t, u, mm, model.global_gain_db, locked_bands=locked_bands
+        )
+        idx2 = _apply_locks(idx2, locked_idx)
+        y2 = _response_from_idx(bank, idx2, model.global_gain_db)
+        score2 = float(_scores_batch(mm, f, y2[None, :], t, u)[0])
         if best is None or score2 < best[0]:
             best = (score2, idx2.copy(), y2)
 
@@ -233,6 +304,16 @@ def fit_mooer_anti_error(
     y_full = mm.preset_response_db(freq, gains, model)
     full_metrics = mm.regional_rmse(freq, y_full, target.target_db, target.uncertainty_db)
 
+    meta = {
+        **target.meta,
+        "locked_gains_db": {str(k): float(v) for k, v in locked_gains_db.items()},
+        "constraints": {
+            "frequencies_hz": list(model.frequencies_hz),
+            "q_display": model.q_display,
+            "global_gain_db": model.global_gain_db,
+            "band_18000_locked_db": locked_gains_db.get(4),
+        },
+    }
     return FitResult(
         target_name=target.name,
         gains_display_db=gains,
@@ -241,7 +322,7 @@ def fit_mooer_anti_error(
         global_gain_db=model.global_gain_db,
         score=float(score),
         metrics={**metrics, "full_curve": full_metrics},
-        meta=target.meta,
+        meta=meta,
     )
 
 
@@ -271,6 +352,7 @@ def save_fit(result: FitResult, target: FitTarget, out_dir: Path) -> dict[str, P
         "notes": (
             "Gains are GE300 display values at 30/148/735/3637/18000 Hz. "
             "Global locked at +3 dB. Q display locked at 0.3. "
+            "Band 18000 Hz may be locked (see meta.locked_gains_db). "
             "Objective = anti-error (worst regional RMSE + balanced penalties)."
         ),
     }

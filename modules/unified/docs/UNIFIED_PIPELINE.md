@@ -43,6 +43,20 @@ python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus -
 
 Salidas en `modules/unified/data/fits/`.
 
+## Informe PDF orquestado (raíz del repo)
+
+```bash
+python modules/unified/code/cli.py informe
+```
+
+Contenido:
+
+1. Curvas Café→Azul (V10.2)
+2. Curvas RC Bajo / Híbrido / Guitarra
+3. 3 presets Mooer anti-error con Q=0.3, freqs locked, **18000 Hz = −16 dB**
+
+Salida: `INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf` + `modules/unified/data/ORCHESTRATED_PRESETS_LOCKED18K.json`
+
 ## Etapas heavy (requieren audio + deps DSP)
 
 ```bash

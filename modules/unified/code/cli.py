@@ -14,6 +14,7 @@ from orchestrate import audit, evaluate_mooer, provenance, summarize
 from paths import discover_repo
 from pipeline import plan
 from render_chain import process_file, verify_against_reference
+from report_pdf import generate_report
 from targets import azul_rc_target, azul_target
 
 
@@ -167,6 +168,21 @@ def cmd_process(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_informe(args: argparse.Namespace) -> int:
+    """Generate ordered PDF: Café→Azul, RC curves, 3 Mooer presets (18k=-16)."""
+    paths = discover_repo()
+    out = Path(args.output) if args.output else paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf"
+    summary = generate_report(
+        out,
+        de_seeds=args.de_seeds,
+        random_starts=args.random_starts,
+        seed=args.seed,
+        paths=paths,
+    )
+    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    return 0
+
+
 def cmd_verify(args: argparse.Namespace) -> int:
     """Process input and compare spectrum to a real reference recording."""
     stats = verify_against_reference(
@@ -288,6 +304,21 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     proc.set_defaults(func=cmd_process)
+
+    inf = sub.add_parser(
+        "informe",
+        help="PDF orquestado: Café→Azul + RC + 3 presets Mooer (Q=0.3, 18k=-16)",
+    )
+    inf.add_argument(
+        "--output",
+        "-o",
+        default=None,
+        help="PDF path (default: INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf at repo root)",
+    )
+    inf.add_argument("--de-seeds", type=int, default=6)
+    inf.add_argument("--random-starts", type=int, default=600)
+    inf.add_argument("--seed", type=int, default=20260730)
+    inf.set_defaults(func=cmd_informe)
 
     ver = sub.add_parser(
         "verify",

@@ -1,0 +1,72 @@
+{
+  "target_name": "mooer_guitar_locked18k",
+  "gains_display_db": [
+    -1.0,
+    -11.0,
+    16.0,
+    16.0,
+    -16.0
+  ],
+  "frequencies_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "q_display": 0.3,
+  "global_gain_db": 3.0,
+  "score": 7.630869354378384,
+  "metrics": {
+    "Subgraves": 1.1888214695160473,
+    "Graves": 1.4270838534404275,
+    "Medios": 5.6497205532755475,
+    "Presencia": 3.964483520073465,
+    "Brillo": 5.728778012728752,
+    "worst": 5.728778012728752,
+    "avg": 3.591777481806848,
+    "global": 4.034871416446913,
+    "p95": 8.134399564765685,
+    "r2540": 0.710395570655647,
+    "ae30": 0.6470846284783602,
+    "anti_error_score": 7.630869354378384,
+    "full_curve": {
+      "Subgraves": 1.1888214695160473,
+      "Graves": 1.4270838534404275,
+      "Medios": 5.6497205532755475,
+      "Presencia": 3.964483520073465,
+      "Brillo": 5.728778012728752,
+      "worst": 5.728778012728752,
+      "avg": 3.591777481806848,
+      "global": 4.037283040660957
+    }
+  },
+  "meta": {
+    "mode": "rc",
+    "rc_setup": "guitar",
+    "locked_gains_db": {
+      "4": -16.0
+    },
+    "constraints": {
+      "frequencies_hz": [
+        30.0,
+        148.0,
+        735.0,
+        3637.0,
+        18000.0
+      ],
+      "q_display": 0.3,
+      "global_gain_db": 3.0,
+      "band_18000_locked_db": -16.0
+    }
+  },
+  "order_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "pedal": "MOOER GE300",
+  "notes": "Gains are GE300 display values at 30/148/735/3637/18000 Hz. Global locked at +3 dB. Q display locked at 0.3. Band 18000 Hz may be locked (see meta.locked_gains_db). Objective = anti-error (worst regional RMSE + balanced penalties)."
+}

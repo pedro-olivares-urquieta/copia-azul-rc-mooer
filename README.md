@@ -52,6 +52,10 @@ python modules/unified/code/cli.py process -i /ruta/tu_bajo.wav --chain azul+rc 
 python modules/unified/code/cli.py fit-azul
 python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose plus
 python modules/unified/code/cli.py fit-azul-rc --rc-setup bass --compose minus --timbre-only
+
+# Informe PDF ordenado (Azul + RC + 3 presets, 18k=-16)
+python modules/unified/code/cli.py informe
+# → INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf
 ```
 
 ## Pipelines heavy (DSP completo)

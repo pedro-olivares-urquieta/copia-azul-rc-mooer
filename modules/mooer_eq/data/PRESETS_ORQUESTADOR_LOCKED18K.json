@@ -1,0 +1,53 @@
+{
+  "global_gain_db": 3.0,
+  "frequencies_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "q_display": [
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3
+  ],
+  "band_18000_locked_db": -16.0,
+  "presets": {
+    "Bajo": {
+      "gains_display_db": [
+        16.0,
+        -7.0,
+        12.5,
+        16.0,
+        -16.0
+      ],
+      "anti_error_score": 8.726275635754618,
+      "reason": "Optimizado por unified (anti-error) con Q=0.3, freqs locked y 18000 Hz = -16 dB."
+    },
+    "Híbrido": {
+      "gains_display_db": [
+        6.5,
+        -12.0,
+        16.0,
+        16.0,
+        -16.0
+      ],
+      "anti_error_score": 7.847580399305915,
+      "reason": "Optimizado por unified (anti-error) con Q=0.3, freqs locked y 18000 Hz = -16 dB."
+    },
+    "Guitarra": {
+      "gains_display_db": [
+        -1.0,
+        -11.0,
+        16.0,
+        16.0,
+        -16.0
+      ],
+      "anti_error_score": 7.630869354378384,
+      "reason": "Optimizado por unified (anti-error) con Q=0.3, freqs locked y 18000 Hz = -16 dB."
+    }
+  }
+}
