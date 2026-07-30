@@ -439,13 +439,11 @@ def organize_rc_and_mooer() -> None:
     if (src / "checksums").exists():
         move_tree_contents(src / "checksums", rc / "checksums")
 
-    # Excel results workbook
-    xlsx = ROOT / "PEDAL_MOOER_MULTIZONE_MASTER_COMPLETO (1)" / "PEDAL_MOOER_MULTIZONE_RESULTADOS.xlsx"
+    # Excel results workbook + legacy package manifest
+    xlsx = src / "PEDAL_MOOER_MULTIZONE_RESULTADOS.xlsx"
     if xlsx.exists():
         copy_file(xlsx, mooer / "data" / "PEDAL_MOOER_MULTIZONE_RESULTADOS.xlsx")
-
-    # Package manifest for reference
-    manifest = ROOT / "PEDAL_MOOER_MULTIZONE_MASTER_COMPLETO (1)" / "PACKAGE_MANIFEST.md"
+    manifest = src / "PACKAGE_MANIFEST.md"
     if manifest.exists():
         copy_file(manifest, mooer / "docs" / "PACKAGE_MANIFEST_LEGACY.md")
 
