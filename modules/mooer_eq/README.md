@@ -38,18 +38,30 @@ Orden: 30 / 148 / 735 / 3637 / 18000 Hz · Global +3 dB · Q 0.3
 | Híbrido | `[-1.5, 3.0, 4.0, 8.5, 1.5]` |
 | Guitarra | `[-10.5, 5.5, 2.0, 10.5, 0.0]` |
 
+## API / CLI
+
+```bash
+python modules/mooer_eq/code/mooer_cli.py audit
+python modules/mooer_eq/code/mooer_cli.py summarize
+python modules/mooer_eq/code/mooer_cli.py evaluate
+```
+
+Código reutilizable:
+
+- `mooer_model.py` — modelo GE300 calibrado (`preset_response_db`, `regional_rmse`)
+- `mooer_artifacts.py` — carga/evaluación de presets
+
 ## Paths
 
 Vía `code/repo_paths.py`:
 
 - Datos/presets: `data/`
-- Curvas objetivo: `../rc_pedals/data/refined_curves_192ppo.csv` (si no hay copia local)
+- Curvas objetivo: `../rc_pedals/data/refined_curves_192ppo.csv`
 - Plots: `plots/`
 
 ## Pipeline (orden)
 
 ```bash
-# primero reconstrucción en rc_pedals, luego:
 python modules/mooer_eq/code/02_multizone_discrete_optimization.py
 python modules/mooer_eq/code/03_constraint_diagnostics.py
 python modules/mooer_eq/code/04_operational_selection.py

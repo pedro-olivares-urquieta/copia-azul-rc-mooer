@@ -27,17 +27,26 @@ Señales:
 
 Las curvas RC reconstruidas alimentan [`../mooer_eq`](../mooer_eq) para buscar presets del GE300.
 
+## API / CLI (sin DSP pesado)
+
+```bash
+python modules/rc_pedals/code/rc_cli.py audit
+python modules/rc_pedals/code/rc_cli.py summarize
+```
+
+Código reutilizable: `rc_artifacts.py` (`load_refined_curves`, `summarize_curves`, `audit_artifacts`).
+
 ## Paths
 
 Vía `code/repo_paths.py`:
 
 - Audio canónico: `audio/rc_response` (nombres normalizados)
-- Los scripts siguen usando nombres lógicos legacy (`Pink.m4a`, etc.) mapeados a esos archivos
+- Nombres lógicos legacy (`Pink.m4a`, etc.) mapeados a esos archivos
 - Datos: `data/`
 - Cache WAV: `_cache/wav/`
 
 ```bash
 python modules/rc_pedals/code/01_audio_reconstruction_and_384_audit.py
-# o reconstrucción completa:
-python modules/rc_pedals/code/source_reconstruction_pipeline.py
+python modules/rc_pedals/code/source_reconstruction_pipeline.py \
+  --output-dir modules/rc_pedals/_runs/reconstruction
 ```

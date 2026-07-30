@@ -1,0 +1,5 @@
+producer,source,source_exists,source_sha256,consumer,target,target_exists,note
+rc_pedals,/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv,True,7184f8d0b1808235173dbb84e62d6afb9e2325e711e703f53e9ad185bbdcf3a7,mooer_eq,/workspace/modules/mooer_eq/data/final_presets.csv,True,RC curves feed Mooer optimization
+emulate_azul,/workspace/modules/emulate_azul/results/CURVAS_DENSAS_V10_2.csv,True,357c15ead3eab50128050353b910e510551530fc8a3bb1dd9d5217d48bfba3b9,unified,/workspace/modules/unified/data/unified_summary.json,False,Azul curve feeds unified summary
+rc_pedals,/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv,True,7184f8d0b1808235173dbb84e62d6afb9e2325e711e703f53e9ad185bbdcf3a7,unified,/workspace/modules/unified/data/unified_summary.json,False,RC curves feed unified summary
+mooer_eq,/workspace/modules/mooer_eq/data/final_presets.csv,True,521aa584472fcfcb58c690cff89fe0e75bbd11f296c02ef57b1edf8ad119d2d5,unified,/workspace/modules/unified/data/unified_summary.json,False,Mooer presets feed unified summary

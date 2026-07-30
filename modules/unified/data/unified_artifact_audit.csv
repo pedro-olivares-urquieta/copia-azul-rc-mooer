@@ -1,0 +1,29 @@
+artifact,path,exists,bytes,kind,module
+CURVAS_DENSAS_V10_2.csv,/workspace/modules/emulate_azul/results/CURVAS_DENSAS_V10_2.csv,True,1357841,result,emulate_azul
+GAIN_GLOBAL_V10_2.csv,/workspace/modules/emulate_azul/results/GAIN_GLOBAL_V10_2.csv,True,239,result,emulate_azul
+GAIN_POR_PAREJA_Y_FUENTE_V10_2.csv,/workspace/modules/emulate_azul/results/GAIN_POR_PAREJA_Y_FUENTE_V10_2.csv,True,2075,result,emulate_azul
+PRESET_PARAMETRICO_V10_2.csv,/workspace/modules/emulate_azul/results/PRESET_PARAMETRICO_V10_2.csv,True,232,result,emulate_azul
+QUE_CONTIENEN_REALMENTE_LOS_AUDIOS_V10_2.csv,/workspace/modules/emulate_azul/results/QUE_CONTIENEN_REALMENTE_LOS_AUDIOS_V10_2.csv,True,1445,result,emulate_azul
+CONFIG_V10_2.json,/workspace/modules/emulate_azul/results/CONFIG_V10_2.json,True,879,result,emulate_azul
+cafe_vs_azul_m4a,/workspace/audio/cafe_vs_azul,True,32,audio_count,emulate_azul
+pair_manifest,/workspace/manifests/cafe_vs_azul_pairs.csv,True,4983,manifest,emulate_azul
+refined_curves_192ppo.csv,/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv,True,1082386,data,rc_pedals
+refined_curves_384ppo_audit.csv,/workspace/modules/rc_pedals/data/refined_curves_384ppo_audit.csv,True,922956,data,rc_pedals
+audio_qc.csv,/workspace/modules/rc_pedals/data/audio_qc.csv,True,1619,data,rc_pedals
+method_validation.csv,/workspace/modules/rc_pedals/data/method_validation.csv,True,768,data,rc_pedals
+grid_convergence_192_vs_384.csv,/workspace/modules/rc_pedals/data/grid_convergence_192_vs_384.csv,True,1090,data,rc_pedals
+Pink.m4a,/workspace/audio/rc_response/pink__off.m4a,True,444605,audio,rc_pedals
+Pink rc bass on.m4a,/workspace/audio/rc_response/pink__rc_bass.m4a,True,476904,audio,rc_pedals
+Pink rc hybrid on.m4a,/workspace/audio/rc_response/pink__rc_hybrid.m4a,True,503159,audio,rc_pedals
+Pink rc guitar on.m4a,/workspace/audio/rc_response/pink__rc_guitar.m4a,True,507110,audio,rc_pedals
+1 22k.m4a,/workspace/audio/rc_response/sweep_1_22k__off.m4a,True,1083416,audio,rc_pedals
+1 22k rc bass on.m4a,/workspace/audio/rc_response/sweep_1_22k__rc_bass.m4a,True,1098474,audio,rc_pedals
+1 22k rc hybrid on.m4a,/workspace/audio/rc_response/sweep_1_22k__rc_hybrid.m4a,True,1162507,audio,rc_pedals
+1 22k rc guitar on.m4a,/workspace/audio/rc_response/sweep_1_22k__rc_guitar.m4a,True,1144633,audio,rc_pedals
+audio_dir,/workspace/audio/rc_response,True,8,audio_count,rc_pedals
+final_presets.csv,/workspace/modules/mooer_eq/data/final_presets.csv,True,4484,data,mooer_eq
+PRESETS_RECOMENDADOS.json,/workspace/modules/mooer_eq/data/PRESETS_RECOMENDADOS.json,True,1420,data,mooer_eq
+results_summary.json,/workspace/modules/mooer_eq/data/results_summary.json,True,825,data,mooer_eq
+final_preset_selection_metrics.csv,/workspace/modules/mooer_eq/data/final_preset_selection_metrics.csv,True,6011,data,mooer_eq
+final_metrics_by_region.csv,/workspace/modules/mooer_eq/data/final_metrics_by_region.csv,True,10386,data,mooer_eq
+refined_curves_192ppo.csv,/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv,True,1082386,upstream_rc,mooer_eq

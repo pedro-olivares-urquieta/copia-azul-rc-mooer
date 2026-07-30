@@ -45,14 +45,18 @@ def _declared_kind(kind: str) -> str:
     return kind
 
 
-def load_pairs(manifest: Path = MANIFEST, audio_dir: Path = AUDIO) -> list[dict]:
+def load_pairs(
+    manifest: Path = MANIFEST,
+    audio_dir: Path = AUDIO,
+    require_audio: bool = True,
+) -> list[dict]:
     rows = []
     with manifest.open(newline="", encoding="utf-8") as f:
         for r in csv.DictReader(f):
             key = _pair_key(r["kind"], r["label"], r["position"])
             cafe = audio_dir / Path(r["cafe_path"]).name
             azul = audio_dir / Path(r["azul_path"]).name
-            if not cafe.exists() or not azul.exists():
+            if require_audio and (not cafe.exists() or not azul.exists()):
                 raise FileNotFoundError(f"Missing audio for pair {key}: {cafe} / {azul}")
             rows.append(
                 {
@@ -67,7 +71,20 @@ def load_pairs(manifest: Path = MANIFEST, audio_dir: Path = AUDIO) -> list[dict]
     return rows
 
 
-pairs = load_pairs()
+_pairs_cache: list[dict] | None = None
+
+
+def get_pairs(require_audio: bool = True) -> list[dict]:
+    global _pairs_cache
+    if _pairs_cache is None:
+        _pairs_cache = load_pairs(require_audio=require_audio)
+    return _pairs_cache
+
+
+def __getattr__(name: str):
+    if name == "pairs":
+        return get_pairs(require_audio=True)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def periodic_grid(y: np.ndarray, expected_period: float, sr: int = SR):

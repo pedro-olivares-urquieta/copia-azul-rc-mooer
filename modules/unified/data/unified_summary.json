@@ -1,0 +1,318 @@
+{
+  "modules": {
+    "emulate_azul": {
+      "gain_recommended_db": -10.5914945497307,
+      "gain_ci95_low_db": -11.801543301894126,
+      "gain_ci95_high_db": -8.358111158156872,
+      "curve_min_db": -2.7339936176254525,
+      "curve_max_db": 4.120077679566832,
+      "key_points_central_db": {
+        "30.87Hz": 0.002574285686091096,
+        "41.2Hz": -0.07349689539489809,
+        "55Hz": -0.29035497489390033,
+        "80Hz": -0.8820369182175243,
+        "120Hz": -2.052047520460416,
+        "250Hz": -0.8223843029631271,
+        "500Hz": -1.6835754954681412,
+        "800Hz": -0.13518789461413225,
+        "1000Hz": 1.327304179355959,
+        "1250Hz": 2.8412997163402802,
+        "1600Hz": 4.059884653008125,
+        "2000Hz": 3.93658679112182,
+        "3150Hz": 2.3553785109194965,
+        "5000Hz": 0.06611840962916699,
+        "8000Hz": -0.006206969243907083
+      },
+      "legacy_v9_available": false,
+      "legacy_v10_1_available": false
+    },
+    "rc_pedals": {
+      "setups": {
+        "bass": {
+          "mean_db": 11.906143828890707,
+          "min_db": 5.9684418544745785,
+          "max_db": 15.62620971172486,
+          "median_uncertainty_db": 0.0880599944968555,
+          "value_at_30hz_db": 15.564827796463948
+        },
+        "hybrid": {
+          "mean_db": 8.748108393589092,
+          "min_db": 2.6019549963861004,
+          "max_db": 13.058811909505716,
+          "median_uncertainty_db": 0.0883138496635173,
+          "value_at_30hz_db": 3.2358304050796147
+        },
+        "guitar": {
+          "mean_db": 7.194236594244001,
+          "min_db": -2.919566319602589,
+          "max_db": 12.99100197116692,
+          "median_uncertainty_db": 0.0888286325827099,
+          "value_at_30hz_db": -2.1514222933361227
+        }
+      },
+      "grid_convergence_20_15500": [
+        {
+          "setup": "bass",
+          "rmse_difference_db": 0.0410022524788568,
+          "p95_abs_difference_db": 0.086917222664722
+        },
+        {
+          "setup": "hybrid",
+          "rmse_difference_db": 0.0446774295717179,
+          "p95_abs_difference_db": 0.1110432758845888
+        },
+        {
+          "setup": "guitar",
+          "rmse_difference_db": 0.0476199319177252,
+          "p95_abs_difference_db": 0.0832122470524155
+        }
+      ]
+    },
+    "mooer_eq": {
+      "results_summary": {
+        "version": "3.1-operational-selection",
+        "recommendations": {
+          "Bajo": {
+            "gains_db": [
+              15.0,
+              3.5,
+              -3.5,
+              16.0,
+              -3.5
+            ],
+            "reason": "Se conserva el anterior: el minimax empeora Graves y Medios por encima de la incertidumbre de medición."
+          },
+          "Híbrido": {
+            "gains_db": [
+              -1.5,
+              3.0,
+              4.0,
+              8.5,
+              1.5
+            ],
+            "reason": "Se conserva el anterior: el minimax mejora subgrave/peor zona, pero degrada Graves y Medios más que la incertidumbre."
+          },
+          "Guitarra": {
+            "gains_db": [
+              -10.5,
+              5.5,
+              2.0,
+              10.5,
+              0.0
+            ],
+            "reason": "Nuevo preset aceptado: reduce peor RMSE y promedio regional sin degradaciones superiores a la incertidumbre regional."
+          }
+        }
+      },
+      "recommended_gains": {
+        "Bajo": [
+          15.0,
+          3.5,
+          -3.5,
+          16.0,
+          -3.5
+        ],
+        "Híbrido": [
+          -1.5,
+          3.0,
+          4.0,
+          8.5,
+          1.5
+        ],
+        "Guitarra": [
+          -10.5,
+          5.5,
+          2.0,
+          10.5,
+          0.0
+        ]
+      },
+      "evaluated_metrics": [
+        {
+          "setup": "Bajo",
+          "variant": "balanced_recommended",
+          "gains_db": [
+            15.0,
+            3.5,
+            -3.5,
+            16.0,
+            -3.5
+          ],
+          "Subgraves": 0.2479915491959986,
+          "Graves": 0.37417490558072947,
+          "Medios": 0.40545339689623294,
+          "Presencia": 0.5605792860446029,
+          "Brillo": 0.6993166970351601,
+          "worst": 0.6993166970351601,
+          "avg": 0.45750316695054477,
+          "global": 0.4369960707234142,
+          "error_30hz_db": 0.1947547018006368
+        },
+        {
+          "setup": "Híbrido",
+          "variant": "balanced_recommended",
+          "gains_db": [
+            -1.5,
+            3.0,
+            4.0,
+            8.5,
+            1.5
+          ],
+          "Subgraves": 0.2533091057795668,
+          "Graves": 0.3107794169580019,
+          "Medios": 0.5793420537466605,
+          "Presencia": 0.735249588604043,
+          "Brillo": 0.7985008126125183,
+          "worst": 0.7985008126125183,
+          "avg": 0.5354361955401581,
+          "global": 0.5181130009814603,
+          "error_30hz_db": 0.2032847066232022
+        },
+        {
+          "setup": "Guitarra",
+          "variant": "balanced_recommended",
+          "gains_db": [
+            -10.5,
+            5.5,
+            2.0,
+            10.5,
+            0.0
+          ],
+          "Subgraves": 0.10598801270108141,
+          "Graves": 0.1523014978046571,
+          "Medios": 0.4374717571612606,
+          "Presencia": 0.713843496561668,
+          "Brillo": 0.7068174413428621,
+          "worst": 0.713843496561668,
+          "avg": 0.42328444111430585,
+          "global": 0.4271091042049296,
+          "error_30hz_db": -0.07933183948749001
+        }
+      ],
+      "model": {
+        "frequencies_hz": [
+          30.0,
+          148.0,
+          735.0,
+          3637.0,
+          18000.0
+        ],
+        "q_display": 0.3,
+        "global_gain_db": 3.0
+      }
+    }
+  },
+  "artifact_audit": {
+    "total": 28,
+    "missing": 0,
+    "missing_items": []
+  },
+  "provenance": [
+    {
+      "producer": "rc_pedals",
+      "source": "/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv",
+      "source_exists": true,
+      "source_sha256": "7184f8d0b1808235173dbb84e62d6afb9e2325e711e703f53e9ad185bbdcf3a7",
+      "consumer": "mooer_eq",
+      "target": "/workspace/modules/mooer_eq/data/final_presets.csv",
+      "target_exists": true,
+      "note": "RC curves feed Mooer optimization"
+    },
+    {
+      "producer": "emulate_azul",
+      "source": "/workspace/modules/emulate_azul/results/CURVAS_DENSAS_V10_2.csv",
+      "source_exists": true,
+      "source_sha256": "357c15ead3eab50128050353b910e510551530fc8a3bb1dd9d5217d48bfba3b9",
+      "consumer": "unified",
+      "target": "/workspace/modules/unified/data/unified_summary.json",
+      "target_exists": false,
+      "note": "Azul curve feeds unified summary"
+    },
+    {
+      "producer": "rc_pedals",
+      "source": "/workspace/modules/rc_pedals/data/refined_curves_192ppo.csv",
+      "source_exists": true,
+      "source_sha256": "7184f8d0b1808235173dbb84e62d6afb9e2325e711e703f53e9ad185bbdcf3a7",
+      "consumer": "unified",
+      "target": "/workspace/modules/unified/data/unified_summary.json",
+      "target_exists": false,
+      "note": "RC curves feed unified summary"
+    },
+    {
+      "producer": "mooer_eq",
+      "source": "/workspace/modules/mooer_eq/data/final_presets.csv",
+      "source_exists": true,
+      "source_sha256": "521aa584472fcfcb58c690cff89fe0e75bbd11f296c02ef57b1edf8ad119d2d5",
+      "consumer": "unified",
+      "target": "/workspace/modules/unified/data/unified_summary.json",
+      "target_exists": false,
+      "note": "Mooer presets feed unified summary"
+    }
+  ],
+  "pipeline_plan_no_heavy": [
+    {
+      "stage": "emulate_azul.audit",
+      "module": "emulate_azul",
+      "heavy": false,
+      "action": "ready",
+      "description": "Validate Azul artifacts and audio presence",
+      "command": "python /workspace/modules/emulate_azul/code/azul_cli.py audit"
+    },
+    {
+      "stage": "emulate_azul.build_v10_2",
+      "module": "emulate_azul",
+      "heavy": true,
+      "action": "skip_heavy",
+      "description": "Full Café→Azul V10.2 extraction (heavy DSP)",
+      "command": "python /workspace/modules/emulate_azul/code/build_v10_2.py"
+    },
+    {
+      "stage": "rc_pedals.audit",
+      "module": "rc_pedals",
+      "heavy": false,
+      "action": "ready",
+      "description": "Validate RC artifacts and audio presence",
+      "command": "python /workspace/modules/rc_pedals/code/rc_cli.py audit"
+    },
+    {
+      "stage": "rc_pedals.reconstruct",
+      "module": "rc_pedals",
+      "heavy": true,
+      "action": "skip_heavy",
+      "description": "Full RC pink+sweep reconstruction (heavy DSP)",
+      "command": "python /workspace/modules/rc_pedals/code/source_reconstruction_pipeline.py --output-dir /workspace/modules/rc_pedals/_runs/reconstruction"
+    },
+    {
+      "stage": "mooer_eq.audit",
+      "module": "mooer_eq",
+      "heavy": false,
+      "action": "ready",
+      "description": "Validate Mooer presets and upstream RC curves",
+      "command": "python /workspace/modules/mooer_eq/code/mooer_cli.py audit"
+    },
+    {
+      "stage": "mooer_eq.optimize",
+      "module": "mooer_eq",
+      "heavy": false,
+      "action": "ready",
+      "description": "Discrete multizone optimization for GE300",
+      "command": "python /workspace/modules/mooer_eq/code/02_multizone_discrete_optimization.py"
+    },
+    {
+      "stage": "mooer_eq.select",
+      "module": "mooer_eq",
+      "heavy": false,
+      "action": "ready",
+      "description": "Operational preset selection",
+      "command": "python /workspace/modules/mooer_eq/code/04_operational_selection.py"
+    },
+    {
+      "stage": "unified.summarize",
+      "module": "unified",
+      "heavy": false,
+      "action": "ready",
+      "description": "Cross-module summary report",
+      "command": "python /workspace/modules/unified/code/cli.py summarize"
+    }
+  ]
+}

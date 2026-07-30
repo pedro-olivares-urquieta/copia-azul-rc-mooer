@@ -31,9 +31,18 @@ python code/postprocess_v10_2.py
 - Curva: poco cambio <60 Hz; recorte ~80–630 Hz; boost ~1–3 kHz
 - Preset paramétrico en `results/PRESET_PARAMETRICO_V10_2.csv`
 
+## API / CLI (sin DSP pesado)
+
+```bash
+python modules/emulate_azul/code/azul_cli.py audit
+python modules/emulate_azul/code/azul_cli.py summarize
+```
+
+Código reutilizable: `azul_artifacts.py` (`load_curve`, `summarize_curve`, `audit_artifacts`).
+
 ## Paths
 
-Los scripts usan rutas del repo vía `code/repo_paths.py`:
+Vía `code/repo_paths.py`:
 
 - Audio: `audio/cafe_vs_azul`
 - Resultados: `results/`
@@ -42,10 +51,8 @@ Los scripts usan rutas del repo vía `code/repo_paths.py`:
 - Exports zip: `exports/`
 - Curvas V9/V10.1 opcionales: `legacy_curves/`
 
-Ejecutar desde cualquier cwd:
-
 ```bash
 python modules/emulate_azul/code/build_v10_2.py
 ```
 
-Dependencias: `code/requirements.txt` (+ `ffmpeg` en el sistema).
+Dependencias: `code/requirements.txt` (+ `ffmpeg`).
