@@ -112,6 +112,7 @@ def cmd_fit_azul(args: argparse.Namespace) -> int:
         de_seeds=args.de_seeds,
         random_starts=args.random_starts,
         seed=args.seed,
+        quality=getattr(args, "quality", "high"),
     )
     out = discover_repo().unified / "data" / "fits"
     written = save_fit(result, target, out)
@@ -131,6 +132,7 @@ def cmd_fit_azul_rc(args: argparse.Namespace) -> int:
         de_seeds=args.de_seeds,
         random_starts=args.random_starts,
         seed=args.seed,
+        quality=getattr(args, "quality", "high"),
     )
     out = discover_repo().unified / "data" / "fits"
     written = save_fit(result, target, out)
@@ -230,9 +232,15 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Ignore Azul global gain; fit/process timbre curve only",
     )
-    common.add_argument("--de-seeds", type=int, default=6)
-    common.add_argument("--random-starts", type=int, default=800)
+    common.add_argument("--de-seeds", type=int, default=12)
+    common.add_argument("--random-starts", type=int, default=2500)
     common.add_argument("--seed", type=int, default=20260730)
+    common.add_argument(
+        "--quality",
+        default="high",
+        choices=["fast", "high", "max"],
+        help="Search budget for anti-error engine",
+    )
 
     fa = sub.add_parser(
         "fit-azul",
@@ -315,8 +323,8 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="PDF path (default: INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf at repo root)",
     )
-    inf.add_argument("--de-seeds", type=int, default=6)
-    inf.add_argument("--random-starts", type=int, default=600)
+    inf.add_argument("--de-seeds", type=int, default=12)
+    inf.add_argument("--random-starts", type=int, default=2500)
     inf.add_argument("--seed", type=int, default=20260730)
     inf.set_defaults(func=cmd_informe)
 

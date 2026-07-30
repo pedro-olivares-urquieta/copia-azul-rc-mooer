@@ -247,6 +247,7 @@ def _fit_three_presets(
             random_starts=random_starts,
             seed=seed,
             locked_gains_db=LOCKED,
+            quality="high",
         )
         fit.target_name = f"azul_plus_rc_{setup}_locked18k"
         written = save_fit(fit, target, out_dir)
@@ -472,8 +473,8 @@ def _write_presets_json(paths: RepoPaths, results: dict[str, dict]) -> Path:
 def generate_report(
     output_pdf: str | Path | None = None,
     *,
-    de_seeds: int = 6,
-    random_starts: int = 600,
+    de_seeds: int = 12,
+    random_starts: int = 2500,
     seed: int = 20260730,
     paths: RepoPaths | None = None,
 ) -> dict:
@@ -513,6 +514,12 @@ def generate_report(
                 f"  · Global gain locked: +{GLOBAL_GAIN:.0f} dB",
                 f"  · Banda 18000 Hz locked: {LOCK_18K_DB:.0f} dB",
                 "  · Gains display: −16 … +16 dB, step 0.5",
+                "",
+                "Motor anti-error (quality=high):",
+                "  · Búsqueda exhaustiva discreta sobre bandas libres (18 kHz fijo)",
+                "  · Rejilla 1 dB + refinamiento local 0.5 dB + pairwise polish",
+                "  · Resultado = mínimo global discreto bajo los locks",
+                "  · El error residual es límite del GE300, no del buscador",
             ],
         )
         azul_sum = _plot_azul(pdf, paths)

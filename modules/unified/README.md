@@ -66,6 +66,13 @@ python modules/unified/code/cli.py informe
 
 JSON: `modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json`
 
+Motor de búsqueda (`mooer_fit.py`, `quality=high|max`):
+
+- Exhaustivo discreto en bandas libres (con 18 kHz locked → óptimo global)
+- Semillas LSQ + DE + dual annealing + LHS (modo heurístico si 5 bandas libres)
+- ILS + pairwise + triple polish
+- Objetivo anti-error: `worst + 0.35·avg + 0.10·global + …`
+
 ## CLI — fit presets (curvas → GE300)
 
 ```bash

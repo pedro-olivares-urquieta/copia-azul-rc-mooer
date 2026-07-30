@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-07-30T22:38:05.768912+00:00",
+  "generated_at_utc": "2026-07-30T23:20:42.223555+00:00",
   "source": "unified orchestrator — Azul(+gain)+RC mixed into one Mooer preset",
   "formula": "target_db = azul_central_db + azul_gain_db + rc_setup_db",
   "constraints": {

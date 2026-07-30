@@ -34,6 +34,13 @@
     "locked_gains_db": {
       "4": -16.0
     },
+    "engine": {
+      "quality": "high",
+      "mode": "exhaustive_discrete_global",
+      "n_free_bands": 4,
+      "grid_step_db": 0.5,
+      "proven_global_min": true
+    },
     "constraints": {
       "frequencies_hz": [
         30.0,
