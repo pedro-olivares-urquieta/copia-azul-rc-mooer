@@ -103,6 +103,59 @@ def list_stages(paths: RepoPaths | None = None) -> list[PipelineStage]:
             heavy=False,
             description="Cross-module summary report",
         ),
+        PipelineStage(
+            name="unified.fit_azul",
+            module="unified",
+            command=[py, str(paths.unified / "code" / "cli.py"), "fit-azul"],
+            inputs=[paths.emulate_azul / "results" / "CURVAS_DENSAS_V10_2.csv"],
+            outputs=[paths.unified / "data" / "fits" / "azul_central_with_gain_mooer_preset.json"],
+            heavy=False,
+            description="Fit Mooer GE300 to Café→Azul curve (anti-error)",
+        ),
+        PipelineStage(
+            name="unified.fit_azul_rc_minus",
+            module="unified",
+            command=[
+                py,
+                str(paths.unified / "code" / "cli.py"),
+                "fit-azul-rc",
+                "--rc-setup",
+                "bass",
+                "--compose",
+                "minus",
+            ],
+            inputs=[
+                paths.emulate_azul / "results" / "CURVAS_DENSAS_V10_2.csv",
+                paths.rc_pedals / "data" / "refined_curves_192ppo.csv",
+            ],
+            outputs=[
+                paths.unified / "data" / "fits" / "azul_minus_rc_bass_with_gain_mooer_preset.json"
+            ],
+            heavy=False,
+            description="Fit Mooer residual when RC bass is already on (Azul − RC)",
+        ),
+        PipelineStage(
+            name="unified.fit_azul_rc_plus",
+            module="unified",
+            command=[
+                py,
+                str(paths.unified / "code" / "cli.py"),
+                "fit-azul-rc",
+                "--rc-setup",
+                "bass",
+                "--compose",
+                "plus",
+            ],
+            inputs=[
+                paths.emulate_azul / "results" / "CURVAS_DENSAS_V10_2.csv",
+                paths.rc_pedals / "data" / "refined_curves_192ppo.csv",
+            ],
+            outputs=[
+                paths.unified / "data" / "fits" / "azul_plus_rc_bass_with_gain_mooer_preset.json"
+            ],
+            heavy=False,
+            description="Fit Mooer to Azul + RC bass cascade target",
+        ),
     ]
 
 

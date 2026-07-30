@@ -1,0 +1,61 @@
+{
+  "target_name": "azul_minus_rc_bass_timbre",
+  "gains_display_db": [
+    -16.0,
+    -14.0,
+    1.5,
+    -15.0,
+    -5.5
+  ],
+  "frequencies_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "q_display": 0.3,
+  "global_gain_db": 3.0,
+  "score": 1.6782107594289235,
+  "metrics": {
+    "Subgraves": 1.1639131397883193,
+    "Graves": 0.8111027015295474,
+    "Medios": 1.1421843421084057,
+    "Presencia": 1.0431749187697483,
+    "Brillo": 0.5556491675749332,
+    "worst": 1.1639131397883193,
+    "avg": 0.9432048539541908,
+    "global": 1.0158845076702092,
+    "p95": 1.7782642891954539,
+    "r2540": 0.713918660641579,
+    "ae30": 0.6382744222711381,
+    "anti_error_score": 1.6782107594289235,
+    "full_curve": {
+      "Subgraves": 1.1639131397883193,
+      "Graves": 0.8111027015295474,
+      "Medios": 1.1421843421084057,
+      "Presencia": 1.0431749187697483,
+      "Brillo": 0.5556491675749332,
+      "worst": 1.1639131397883193,
+      "avg": 0.9432048539541908,
+      "global": 1.0158663608452447
+    }
+  },
+  "meta": {
+    "mode": "azul_minus_rc",
+    "azul_variant": "central",
+    "include_gain": false,
+    "gain_db": 0.0,
+    "rc_setup": "bass",
+    "compose": "minus"
+  },
+  "order_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "pedal": "MOOER GE300",
+  "notes": "Gains are GE300 display values at 30/148/735/3637/18000 Hz. Global locked at +3 dB. Q display locked at 0.3. Objective = anti-error (worst regional RMSE + balanced penalties)."
+}
