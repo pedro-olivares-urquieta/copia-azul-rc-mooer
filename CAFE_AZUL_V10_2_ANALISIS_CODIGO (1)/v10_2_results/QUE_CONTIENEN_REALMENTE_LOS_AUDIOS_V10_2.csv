@@ -1,0 +1,17 @@
+pair,family,declared_kind,events_cafe,events_azul,matched,tempo_cafe,tempo_azul,classification,decision
+B_open,open,mono,104,108,97,100.34890776699055,99.86413043478142,confirmed,training
+E_open,open,mono,103,102,92,100.3489077669901,99.8641304347826,confirmed,training
+A_open,open,mono,104,102,91,99.8641304347826,99.8641304347826,confirmed,training
+D_open,open,mono,104,118,31,99.8641304347826,99.8641304347826,partial,training
+G_open,open,mono,104,111,89,100.34890776699055,99.8641304347826,confirmed,training
+C_open,open,mono,104,113,78,99.8641304347826,100.34890776699055,confirmed,training
+B_12,fret12,mono,52,55,44,99.8641304347826,99.8641304347826,confirmed,training
+E_12,fret12,mono,56,56,50,99.86413043478267,99.8641304347826,confirmed,training
+A_12,fret12,mono,53,63,16,100.34890776699025,99.62349397590376,partial,training
+D_12,fret12,mono,77,55,3,99.8641304347826,100.83841463414628,partial,training
+G_12,fret12,mono,55,53,48,100.59306569343075,99.8641304347826,confirmed,training
+C_12,fret12,mono,55,52,48,100.10593220338936,100.34890776698995,confirmed,training
+C_24,high,mono,51,50,32,99.38401442307693,99.8641304347826,partial,training
+C_chromatic,chromatic,chromatic,100,100,88,198.76802884615446,201.67682926829255,confirmed,training
+Am7,chord,chord,49,45,35,99.8641304347826,99.62349397590376,confirmed,validation/reduced weight
+Cmaj7,chord,chord,55,45,31,99.8641304347826,99.62349397590347,partial,validation/reduced weight
