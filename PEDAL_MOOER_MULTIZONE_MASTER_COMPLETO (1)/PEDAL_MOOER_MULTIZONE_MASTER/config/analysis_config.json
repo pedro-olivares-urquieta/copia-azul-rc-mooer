@@ -1,0 +1,63 @@
+{
+  "version": "3.1",
+  "seeds": [
+    20260730,
+    20260731,
+    20260732,
+    20260733
+  ],
+  "source_truth": "eight original AAC files",
+  "sample_rate_hz": 44100,
+  "grids_ppo": [
+    192,
+    384
+  ],
+  "main_confidence_limit_hz": 15500,
+  "optimization_limit_hz": 18000,
+  "mooer": {
+    "global_gain_db": 3.0,
+    "frequencies_hz": [
+      30,
+      148,
+      735,
+      3637,
+      18000
+    ],
+    "q_display": 0.3,
+    "gain_range_db": [
+      -16,
+      16
+    ],
+    "gain_step_db": 0.5,
+    "gain_effective_coefficient": 0.75,
+    "q_effective_formula": "Q_display * (0.569 - 0.0026 * gain_display)"
+  },
+  "monte_carlo": {
+    "samples_final": 128,
+    "target_components": [
+      "pink-vs-fused deviation",
+      "sweep-vs-fused deviation",
+      "smoothing variation",
+      "correlated uncertainty"
+    ],
+    "calibration_scenario_not_measured": {
+      "gain_coefficient_sd": 0.015,
+      "q_base_sd": 0.01,
+      "q_slope_sd": 0.0003,
+      "frequency_relative_sd": 0.003
+    }
+  },
+  "search": {
+    "random_discrete_candidates_per_setup": 30000,
+    "optimization_grid_ppo_approx": 24,
+    "local_cube_radius_db": 1.5,
+    "algorithms": [
+      "Differential Evolution",
+      "discrete random multi-start",
+      "coordinate descent",
+      "simulated annealing",
+      "local discrete cubes",
+      "Pareto filtering"
+    ]
+  }
+}

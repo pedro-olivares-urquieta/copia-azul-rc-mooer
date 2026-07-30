@@ -1,0 +1,4 @@
+setup,finite_observations,median_harmonic_excess_db,p95_harmonic_excess_db,max_harmonic_excess_db,interpretation
+bass,24,4.825592941034327,13.494192070419471,13.96246515135015,exploratory proxy; not a calibrated THD measurement
+guitar,24,3.481135670688345,18.600415170865087,19.35412402362404,exploratory proxy; not a calibrated THD measurement
+hybrid,24,0.8211183844595762,15.553590205833016,16.143437954849976,exploratory proxy; not a calibrated THD measurement

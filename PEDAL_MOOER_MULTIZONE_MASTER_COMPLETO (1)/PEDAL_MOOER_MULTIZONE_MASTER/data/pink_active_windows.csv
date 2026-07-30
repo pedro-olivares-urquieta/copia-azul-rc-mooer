@@ -1,0 +1,5 @@
+file,active_start_s,active_end_s,threshold_dbfs,multitaper_blocks
+Pink.m4a,2.45,33.4,-55.508752838732725,14
+Pink rc bass on.m4a,1.85,34.5,-42.32754860130021,15
+Pink rc hybrid on.m4a,1.9000000000000001,36.4,-47.66316044639136,16
+Pink rc guitar on.m4a,3.2,37.800000000000004,-48.98333188758448,16

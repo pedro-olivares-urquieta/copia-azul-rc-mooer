@@ -1,0 +1,735 @@
+# PROMPT MAESTRO DEFINITIVO
+
+## Auditoría, reconstrucción y optimización multizona de los tres presets del pedal en el MOOER GE300
+
+Actúa como un **ingeniero DSP sénior especializado en identificación de sistemas, medición electroacústica, optimización discreta y emulación de ecualizadores paramétricos**.
+
+Debes auditar, reconstruir y mejorar integralmente el proyecto dedicado a copiar en el MOOER GE300 los tres setups medidos del pedal:
+
+1. **Bass / Bajo**
+2. **Hybrid / Híbrido**
+3. **Guitar / Guitarra**
+
+El objetivo no es solamente reducir el RMSE global ni hacer coincidir exactamente un único punto como 30 Hz. El objetivo real es encontrar, dentro de las fuertes limitaciones del MOOER, los presets que produzcan el **menor error posible y el reparto más equilibrado del error en todas las regiones espectrales**.
+
+---
+
+# 1. Restricciones inmodificables del MOOER
+
+La optimización principal debe respetar exactamente:
+
+* Cinco bandas paramétricas tipo bell.
+* Frecuencias bloqueadas:
+
+  * **30 Hz**
+  * **148 Hz**
+  * **735 Hz**
+  * **3637 Hz**
+  * **18.000 Hz**
+* Q mostrado bloqueado en:
+
+  * **Q = 0,3 en las cinco bandas**
+* Gain de cada banda:
+
+  * Rango de **−16 a +16 dB**
+  * Resolución de **0,5 dB**
+* Gain global principal:
+
+  * Mantener **+3 dB** en los presets principales, porque esa es la arquitectura actual del proyecto.
+* No cambiar frecuencias, Q, tipo de filtro ni cantidad de bandas para mejorar artificialmente las métricas.
+
+Puedes ejecutar secundariamente una auditoría con gain global libre entre **−60 y +3 dB**, en pasos reales del dispositivo, pero esa variante será solamente diagnóstica. No debe reemplazar los presets principales con global +3 dB.
+
+No utilices un modelo genérico ideal de biquad como única representación del MOOER. Debes emplear el **modelo calibrado del dispositivo**, incluyendo:
+
+* Relación entre gain mostrado y gain efectivo.
+* Diferencia entre Q mostrado y Q efectivo.
+* Variación del Q efectivo según el gain.
+* Interacción y suma real de las cinco bandas.
+* Posibles desviaciones de frecuencia efectiva.
+* Cuantización real de los controles.
+
+Si los parámetros de calibración tienen incertidumbre, propágala al resultado final.
+
+---
+
+# 2. Fuente de verdad
+
+La fuente primaria de verdad son los **ocho audios originales**, no los presets obtenidos anteriormente ni las curvas ya procesadas.
+
+## Ruido rosa
+
+* `Pink.m4a`: pedal apagado.
+* `Pink rc bass on.m4a`: setup Bajo.
+* `Pink rc hybrid on.m4a`: setup Híbrido.
+* `Pink rc guitar on.m4a`: setup Guitarra.
+
+## Barridos
+
+* `1 22k.m4a`: pedal apagado.
+* `1 22k rc bass on.m4a`: setup Bajo.
+* `1 22k rc hybrid on.m4a`: setup Híbrido.
+* `1 22k rc guitar on.m4a`: setup Guitarra.
+
+Los nombres y las descripciones entregadas son una guía, pero no debes confiar ciegamente en ellas. Verifica mediante el propio audio:
+
+* Correspondencia correcta entre referencia y pedal encendido.
+* Cantidad y dirección de los barridos.
+* Duración útil.
+* Frecuencia inicial y final real.
+* Cambios globales de nivel.
+* Saturación o clipping.
+* Dropouts.
+* Diferencias entre canales.
+* Artefactos AAC.
+* Repetibilidad.
+* Posibles errores de etiquetado.
+
+No uses las curvas anteriores como entrada de la nueva estimación. Úsalas únicamente como baseline histórico para comparar resultados.
+
+---
+
+# 3. Auditoría inicial de los audios
+
+Antes de calcular cualquier curva:
+
+1. Inventaría todos los archivos.
+2. Calcula SHA-256.
+3. Obtén:
+
+   * Sample rate.
+   * Cantidad de canales.
+   * Duración.
+   * Códec y bitrate.
+   * Peak.
+   * True peak estimado.
+   * RMS.
+   * LUFS aproximado.
+   * Crest factor.
+   * DC offset.
+   * Correlación L/R.
+4. Comprueba si L y R son realmente diferentes o si representan la misma señal.
+5. Convierte internamente a float64.
+6. Si corresponde convertir a mono, documenta exactamente el método.
+7. No normalices cada archivo independientemente antes de extraer la función de transferencia.
+8. Separa explícitamente:
+
+   * Ganancia absoluta del pedal.
+   * Forma espectral de la EQ.
+   * Diferencias accidentales de nivel entre tomas.
+
+Revisa además si el pedal se comporta aproximadamente como un sistema lineal e invariante en el tiempo. Busca:
+
+* Compresión.
+* Saturación.
+* Distorsión armónica.
+* Dependencia con el nivel.
+* Diferencias entre barridos ascendentes y descendentes.
+* Histéresis.
+* Ruido añadido.
+
+Si existe un comportamiento no lineal relevante, cuantifícalo y explica qué parte no puede copiarse mediante un EQ lineal de cinco bandas.
+
+---
+
+# 4. Reconstrucción de la función de transferencia
+
+## 4.1 Barridos
+
+Detecta automáticamente todas las pasadas presentes. Se espera encontrar:
+
+* Dos barridos ascendentes.
+* Dos barridos descendentes.
+
+Pero verifica esto mediante los datos.
+
+Para cada pasada:
+
+* Estima su frecuencia instantánea real.
+* No supongas que el barrido sigue perfectamente la ley teórica.
+* Extrae amplitud mediante demodulación síncrona, deconvolución o un método equivalente validado.
+* Corrige el retardo sin alterar la amplitud.
+* Excluye inicios, finales y transiciones contaminadas.
+* Compara ascendente contra descendente.
+* Compara repetición 1 contra repetición 2.
+* Calcula mediana, dispersión, sesgo y bandas de confianza por frecuencia.
+
+## 4.2 Ruido rosa
+
+Analiza el ruido rosa mediante:
+
+* Segmentación en bloques.
+* Solapamiento controlado.
+* Ventanas adecuadas.
+* Multitaper DPSS.
+* Mediana robusta entre bloques.
+* Bootstrap jerárquico.
+* Rechazo de bloques anómalos.
+
+No interpretes como respuesta del pedal:
+
+* Ruido aleatorio estrecho.
+* Tonos espurios.
+* Artefactos del códec.
+* Caídas comunes presentes tanto en ON como en OFF.
+* El filtrado cercano a Nyquist.
+
+## 4.3 Fusión de métodos
+
+Obtén por separado:
+
+* Curva derivada de ruido rosa.
+* Curva derivada de cada barrido.
+* Curva consolidada de barridos.
+* Curva fusionada final.
+
+La fusión debe estar ponderada por:
+
+* Repetibilidad.
+* Dispersión.
+* SNR.
+* Consistencia ON/OFF.
+* Concordancia entre ruido rosa y barrido.
+* Confianza específica de cada frecuencia.
+
+No alinees arbitrariamente las curvas mediante offsets independientes sin documentar qué diferencia corresponde al gain absoluto y qué diferencia corresponde a variación de la toma.
+
+---
+
+# 5. Resolución y suavizado
+
+Calcula como mínimo:
+
+* Curva nativa de máxima resolución justificable.
+* Curva a **192 puntos por octava**.
+* Curva a **384 puntos por octava** para auditoría de convergencia.
+* Suavizado de 1/12 de octava.
+* Suavizado de 1/6 de octava.
+* Suavizado de 1/3 de octava.
+
+No afirmes que duplicar el número de puntos aumenta automáticamente la precisión. Comprueba si las curvas de 192 y 384 puntos por octava convergen.
+
+La curva objetivo principal debe conservar cambios reproducibles y eliminar irregularidades que no aparezcan consistentemente en:
+
+* Ruido rosa.
+* Barridos ascendentes.
+* Barridos descendentes.
+* Ambas repeticiones.
+
+No suavices antes de determinar qué características son reales.
+
+---
+
+# 6. Límites de frecuencia y confianza
+
+Los audios están a 44,1 kHz, por lo que:
+
+* Nyquist es **22,05 kHz**.
+* No existe información medible entre **22,05 y 30 kHz**.
+* No debes inventar una respuesta entre 22 y 30 kHz.
+* El rango principal de alta confianza debe determinarse desde los datos.
+* Como referencia inicial, se espera buena confianza aproximadamente hasta 15,5 kHz.
+* Entre 15,5 y 18 kHz debe existir una categoría separada de confianza reducida.
+* Entre 18 y 22,05 kHz los resultados son solamente de auditoría.
+* La optimización principal termina en 18 kHz.
+
+No permitas que la caída AAC cercana a Nyquist obligue a la banda de 18 kHz a reproducir el códec en vez del pedal.
+
+Si reaparece un pico cercano a 17,5 kHz solamente en una técnica de medición y no en las demás, clasifícalo como artefacto o dato incierto, no como una característica real automática.
+
+---
+
+# 7. Regiones espectrales principales
+
+Evalúa cada preset en cinco zonas principales:
+
+1. **Subgraves: 20–60 Hz**
+2. **Graves: 60–250 Hz**
+3. **Medios: 250 Hz–2 kHz**
+4. **Agudos y presencia: 2–8 kHz**
+5. **Brillo y aire confiable: 8–15,5 kHz**
+
+Evalúa además, separadamente:
+
+6. **Extensión de baja confianza: 15,5–18 kHz**
+7. **Auditoría no optimizable: 18–22,05 kHz**
+
+La quinta región no debe extenderse artificialmente hasta 30 kHz, porque esas grabaciones no contienen esa información.
+
+Todas las métricas deben integrarse en escala logarítmica de frecuencia. No permitas que una región gane peso solamente porque contiene más muestras en la grilla.
+
+Cada región principal debe aportar inicialmente el mismo peso agregado a la función objetivo. Dentro de cada región, pondera por:
+
+* Confianza.
+* SNR.
+* Repetibilidad.
+* Incertidumbre.
+* Distancia respecto de bordes no confiables.
+
+---
+
+# 8. Tratamiento especial de 30 Hz
+
+Los 30 Hz siguen siendo importantes, especialmente en el preset Bajo, pero no debes repetir una optimización que haga coincidir un único bin casi exactamente a costa de empeorar ampliamente medios y agudos.
+
+Evalúa de forma separada:
+
+* Error exacto en 30 Hz.
+* RMSE entre 25 y 40 Hz.
+* RMSE entre 20 y 60 Hz.
+* Pendiente entre 20 y 30 Hz.
+* Pendiente entre 30 y 60 Hz.
+* Error de forma, no solo error de nivel.
+
+La prioridad correcta debe ser:
+
+1. Reproducir bien la región completa 20–60 Hz.
+2. Reproducir especialmente bien 25–40 Hz.
+3. Mantener un error pequeño en 30 Hz.
+4. Evitar que esa mejora provoque una degradación desproporcionada en otras zonas.
+
+No impongas automáticamente una tolerancia irreal de ±0,02 dB en 30 Hz con gains cuantizados a 0,5 dB.
+
+Primero determina la frontera de Pareto entre:
+
+* Error en 30 Hz.
+* RMSE 25–40 Hz.
+* RMSE 20–60 Hz.
+* Peor RMSE regional.
+* RMSE global.
+* P95 global.
+
+Una solución con mejor error puntual en 30 Hz solo debe reemplazar a otra si el deterioro causado en el resto del espectro es menor que la incertidumbre de medición o está claramente justificado.
+
+---
+
+# 9. Función objetivo multizona
+
+Para cada frecuencia:
+
+[
+e(f)=M(f)-T(f)
+]
+
+donde:
+
+* (T(f)) es la curva objetivo reconstruida.
+* (M(f)) es la respuesta simulada del MOOER.
+* (e(f)) es el residuo en dB.
+
+Calcula para cada zona:
+
+* Error medio firmado.
+* MAE.
+* RMSE.
+* P50.
+* P90.
+* P95.
+* Error máximo.
+* Error máximo robusto, excluyendo puntos de confianza extremadamente baja.
+* Correlación de forma.
+* Error de pendiente en dB por octava.
+
+Usa una optimización lexicográfica o multiobjetivo con este orden:
+
+## Objetivo primario
+
+Minimizar el **peor error regional confiable**, para evitar que una zona quede abandonada:
+
+[
+L_1=\max(RMSE_{\text{sub}},RMSE_{\text{graves}},
+RMSE_{\text{medios}},RMSE_{\text{presencia}},
+RMSE_{\text{brillo}})
+]
+
+Cada RMSE debe incorporar la confianza de los datos.
+
+## Objetivo secundario
+
+Minimizar el promedio equilibrado de las cinco zonas:
+
+[
+L_2=\frac{1}{5}\sum_{z=1}^{5}RMSE_z
+]
+
+No calcules este promedio dando más peso a una zona solo por tener mayor ancho de banda o más puntos.
+
+## Objetivo terciario
+
+Minimizar conjuntamente:
+
+* RMSE global ponderado.
+* P95 global.
+* Error medio firmado.
+* Error de pendientes.
+* Error 25–40 Hz.
+* Error exacto en 30 Hz.
+
+## Penalizaciones
+
+Penaliza:
+
+* Saturación de bandas en ±16 dB.
+* Dependencia excesiva de una única banda.
+* Soluciones muy sensibles a pequeños cambios de calibración.
+* Errores estrechos y altos escondidos por un RMSE bajo.
+* Compensaciones extremas entre bandas muy solapadas.
+* Ajustes dominados por la región 15,5–18 kHz de baja confianza.
+* Cualquier mejora producida por copiar el filtro AAC.
+
+No penalices el uso de ±16 dB solo por motivos estéticos. Penalízalo únicamente como indicador de falta de margen y sensibilidad, y reporta cuándo el óptimo real probablemente requeriría más gain del permitido.
+
+---
+
+# 10. Estrategia de optimización discreta
+
+No dependas de una sola ejecución de un optimizador local.
+
+Debes comparar al menos:
+
+* Differential Evolution o CMA-ES en espacio continuo.
+* Cuantización posterior a pasos de 0,5 dB.
+* Búsqueda local discreta alrededor de cada candidato.
+* Coordinate descent discreto.
+* Simulated annealing o basin hopping.
+* Búsqueda multiarranque.
+* Beam search, branch-and-bound o meet-in-the-middle cuando resulte útil.
+
+Precalcula la respuesta real de cada banda para todos los gains permitidos:
+
+* −16,0
+* −15,5
+* …
+* +15,5
+* +16,0 dB
+
+Esto debe utilizar el modelo calibrado del MOOER y no una simple multiplicación lineal si el Q efectivo cambia con el gain.
+
+Después de encontrar los mejores candidatos:
+
+1. Explora exhaustivamente su vecindad discreta.
+2. Cambia cada banda en ±0,5, ±1 y ±1,5 dB.
+3. Prueba combinaciones simultáneas de varias bandas.
+4. Verifica que no exista un vecino mejor.
+5. Conserva un conjunto de soluciones Pareto, no solo una.
+6. Repite la búsqueda con distintas semillas.
+7. Informa cuántas veces converge al mismo preset.
+
+No declares “óptimo global” salvo que puedas demostrarlo. En caso contrario, denomínalo **mejor solución encontrada y verificada localmente**.
+
+---
+
+# 11. Optimización robusta frente a incertidumbre
+
+No optimices únicamente contra una curva promedio.
+
+Genera una familia de curvas objetivo mediante:
+
+* Bootstrap de bloques del ruido rosa.
+* Selección bootstrap de barridos.
+* Leave-one-pass-out.
+* Variación de alineación.
+* Variación de parámetros de suavizado.
+* Incertidumbre del modelo del MOOER.
+* Incertidumbre del Q efectivo.
+* Incertidumbre del gain efectivo.
+* Posibles tolerancias internas del dispositivo.
+
+Para cada preset candidato, mide:
+
+* Error contra la curva central.
+* Error medio Monte Carlo.
+* P95 Monte Carlo.
+* Peor caso razonable.
+* Variación de cada RMSE regional.
+* Probabilidad de superar 0,5, 1 y 2 dB de error.
+
+La solución recomendada debe ser la que mantenga buen rendimiento en múltiples realizaciones, no la que sobreajuste una única curva estimada.
+
+---
+
+# 12. Validación independiente
+
+Realiza como mínimo:
+
+* Entrenar con ruido rosa y validar con barridos.
+* Entrenar con barridos y validar con ruido rosa.
+* Entrenar omitiendo una pasada y validar con ella.
+* Comparar ascendente contra descendente.
+* Comparar repetición 1 contra repetición 2.
+* Comparar curvas con distintos suavizados.
+* Comparar 192 contra 384 puntos por octava.
+* Comparar modelo ideal contra modelo calibrado del MOOER.
+
+Además, simula la respuesta final y compárala directamente contra las mediciones originales, no solamente contra la curva fusionada.
+
+---
+
+# 13. Presets que debes entregar
+
+Para cada setup —Bajo, Híbrido y Guitarra— entrega:
+
+## A. Preset equilibrado recomendado
+
+Debe minimizar el peor error regional y mantener el mejor compromiso global. Este será el preset principal.
+
+## B. Alternativa con prioridad subgrave
+
+Debe dar mayor prioridad a 20–60 Hz y 25–40 Hz, pero solamente si representa una mejora medible y no destruye el resto del espectro.
+
+## C. Mejor preset RMSE global
+
+Inclúyelo para auditoría aunque no sea el recomendado.
+
+Si A, B y C terminan siendo el mismo preset, indícalo claramente y no dupliques resultados.
+
+Para cada uno muestra:
+
+* Global.
+* Gain de las cinco bandas.
+* Q mostrado.
+* Q efectivo estimado.
+* Error exacto en cada frecuencia bloqueada.
+* RMSE por zona.
+* RMSE 25–40 Hz.
+* RMSE 20–60 Hz.
+* RMSE 20 Hz–8 kHz.
+* RMSE 20 Hz–15,5 kHz.
+* RMSE 20 Hz–18 kHz.
+* RMSE global ponderado.
+* MAE.
+* P95.
+* Error máximo confiable.
+* Error máximo total.
+* Error medio firmado.
+* Resultado Monte Carlo P95.
+* Bandas que llegaron al límite.
+* Margen de mejora impedido por las restricciones.
+
+---
+
+# 14. Comparación obligatoria contra presets anteriores
+
+Compara los nuevos resultados contra:
+
+## Presets refinados anteriores
+
+### Bajo
+
+* 30 Hz: +15,0 dB
+* 148 Hz: +3,5 dB
+* 735 Hz: −3,5 dB
+* 3637 Hz: +16,0 dB
+* 18 kHz: −3,5 dB
+* Global: +3 dB
+
+### Híbrido
+
+* 30 Hz: −1,5 dB
+* 148 Hz: +3,0 dB
+* 735 Hz: +4,0 dB
+* 3637 Hz: +8,5 dB
+* 18 kHz: +1,5 dB
+* Global: +3 dB
+
+### Guitarra
+
+* 30 Hz: −10,0 dB
+* 148 Hz: +4,5 dB
+* 735 Hz: +3,0 dB
+* 3637 Hz: +9,5 dB
+* 18 kHz: +1,0 dB
+* Global: +3 dB
+
+## Presets anteriores con prioridad puntual en 30 Hz
+
+### Bajo
+
+* 30 Hz: +15,5 dB
+* 148 Hz: +2,0 dB
+* 735 Hz: 0,0 dB
+* 3637 Hz: +12,0 dB
+* 18 kHz: −0,5 dB
+
+### Híbrido
+
+* 30 Hz: −1,0 dB
+* 148 Hz: +1,5 dB
+* 735 Hz: +6,5 dB
+* 3637 Hz: +5,5 dB
+* 18 kHz: +4,0 dB
+
+### Guitarra
+
+* 30 Hz: −9,0 dB
+* 148 Hz: +3,0 dB
+* 735 Hz: +5,0 dB
+* 3637 Hz: +7,5 dB
+* 18 kHz: +2,5 dB
+
+No asumas que los valores anteriores son correctos. Recalcula todas sus métricas empleando exactamente la misma curva objetivo y la misma función de evaluación usada para los presets nuevos.
+
+Muestra en una tabla:
+
+* Métrica anterior.
+* Métrica nueva.
+* Diferencia absoluta.
+* Cambio porcentual cuando tenga sentido.
+* Zona que mejora.
+* Zona que empeora.
+* Si el cambio supera la incertidumbre de medición.
+
+---
+
+# 15. Gráficos obligatorios
+
+Genera para cada setup:
+
+1. Curva objetivo contra preset anterior y preset nuevo.
+2. Residuo en dB.
+3. Zoom 20–100 Hz.
+4. Zoom 20–250 Hz.
+5. Zoom 250 Hz–2 kHz.
+6. Zoom 2–8 kHz.
+7. Zoom 8–18 kHz.
+8. RMSE por región.
+9. Error acumulado por octava.
+10. Frontera de Pareto:
+
+    * Error en 30 Hz.
+    * RMSE 20–60 Hz.
+    * Peor RMSE regional.
+    * RMSE global.
+11. Sensibilidad al cambio de ±0,5 dB en cada banda.
+12. Distribución Monte Carlo del error.
+13. Confianza de la curva objetivo.
+14. Contribución individual de cada banda del MOOER.
+15. Suma final de las cinco bandas.
+
+En los gráficos diferencia visualmente:
+
+* Alta confianza.
+* Confianza media.
+* Baja confianza.
+* Zona no medible.
+
+---
+
+# 16. Entregables
+
+Crea un proyecto autónomo y reproducible que incluya:
+
+* Código fuente completo.
+* Configuración centralizada.
+* Archivo de dependencias.
+* Semillas aleatorias registradas.
+* Manifest con SHA-256.
+* README.
+* Descripción del proyecto.
+* Descripción de los ocho audios.
+* Pipeline DSP completo.
+* Informe técnico.
+* Informe de optimización.
+* Informe de incertidumbre.
+* Informe comparativo.
+* Presets finales en CSV.
+* Presets finales en JSON.
+* Curvas objetivo en CSV.
+* Curvas simuladas en CSV.
+* Residuos por frecuencia.
+* Métricas por zona.
+* Resultados Monte Carlo.
+* Tabla Pareto.
+* Gráficos PNG.
+* Libro Excel con hojas separadas.
+* ZIP final verificado.
+
+El Markdown del pipeline debe ser autónomo y explicar profundamente:
+
+* Entradas.
+* Emparejamiento.
+* Control de calidad.
+* Segmentación.
+* Ventanas.
+* Demodulación.
+* Multitaper.
+* Bootstrap.
+* Fusión.
+* Suavizado.
+* Confianza.
+* Modelo del MOOER.
+* Función objetivo.
+* Optimización discreta.
+* Validación.
+* Monte Carlo.
+* Limitaciones.
+* Trazabilidad.
+* Reproducción exacta de resultados.
+
+---
+
+# 17. Criterios para aceptar un nuevo preset
+
+No aceptes un preset nuevo solamente porque:
+
+* Reduce el error exacto en 30 Hz.
+* Reduce unas centésimas el RMSE global.
+* Mejora la región de baja confianza sobre 15,5 kHz.
+* Produce una gráfica visualmente más suave.
+* Utiliza más bandas al límite.
+* Proviene de una ejecución concreta del optimizador.
+
+El nuevo preset debe demostrar:
+
+1. Menor o igual peor RMSE regional.
+2. Mejor equilibrio entre las cinco zonas.
+3. Buen comportamiento en 20–60 Hz.
+4. Error bajo y estable alrededor de 30 Hz.
+5. Mejora reproducible en validación cruzada.
+6. Robustez frente a incertidumbre.
+7. Ausencia de una degradación importante escondida.
+8. Superioridad respecto del preset anterior mayor que el ruido o incertidumbre estimada.
+
+Si ninguna solución supera claramente al preset anterior, debes conservar el anterior y declararlo honestamente.
+
+---
+
+# 18. Formato de la respuesta final
+
+La respuesta debe comenzar con:
+
+1. Resumen ejecutivo.
+2. Diagnóstico de los problemas del pipeline anterior.
+3. Calidad y limitaciones de los audios.
+4. Curvas objetivo finales.
+5. Presets recomendados.
+6. Comparación por regiones.
+7. Análisis especial de 30 Hz.
+8. Robustez e incertidumbre.
+9. Limitaciones del MOOER.
+10. Archivos generados.
+
+No presentes solamente el preset ganador. Explica por qué ganó, qué alternativas fueron descartadas y cuál fue el coste espectral de cada decisión.
+
+La conclusión debe responder explícitamente:
+
+* ¿Cuál es el mejor preset equilibrado para Bajo?
+* ¿Cuál es el mejor preset equilibrado para Híbrido?
+* ¿Cuál es el mejor preset equilibrado para Guitarra?
+* ¿Cuánto error queda en cada zona?
+* ¿Qué parte del error es inevitable por las frecuencias bloqueadas?
+* ¿Qué parte es causada por Q 0,3?
+* ¿Qué parte es causada por la cuantización de 0,5 dB?
+* ¿Qué parte procede de incertidumbre en los audios?
+* ¿Qué banda limita principalmente cada preset?
+* ¿La prioridad de 30 Hz sigue siendo beneficiosa cuando se considera todo el espectro?
+* ¿Existe una solución que domine realmente a los presets anteriores?
+
+No inventes precisión. Distingue siempre entre:
+
+* Datos medidos.
+* Datos inferidos.
+* Datos regularizados.
+* Resultados simulados.
+* Incertidumbre.
+* Regiones no medibles.
