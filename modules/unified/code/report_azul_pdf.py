@@ -528,14 +528,29 @@ def generate_azul_fidelity_report(
     variant = str(op.source_variant.iloc[0]) if "source_variant" in op.columns else "operative"
 
     hold = None
-    rank = out / "FIDELIDAD_RANKING_HOLDOUT_V17.csv"
-    if rank.exists():
+    for rank_name in (
+        "FIDELIDAD_RANKING_HOLDOUT_V19.csv",
+        "FIDELIDAD_RANKING_HOLDOUT_V17.csv",
+        "RESUMEN_V19.json",
+    ):
+        rank = out / rank_name
+        if not rank.exists():
+            continue
+        if rank.suffix == ".json":
+            hold = float(json.loads(rank.read_text()).get("holdout_rmse_db", float("nan")))
+            if np.isfinite(hold):
+                break
+            continue
         rdf = pd.read_csv(rank)
-        hit = rdf[rdf.variant.astype(str).str.contains("v17_v15w_weighted_all|operative", regex=True)]
-        if len(hit):
-            hold = float(hit.iloc[0]["holdout_critical_rmse_db"])
-        elif "holdout_critical_rmse_db" in rdf.columns:
+        # Prefer the row matching operative variant when present.
+        if "variant" in rdf.columns and "source_variant" in op.columns:
+            hit = rdf[rdf.variant.astype(str) == str(op.source_variant.iloc[0])]
+            if len(hit):
+                hold = float(hit.iloc[0]["holdout_critical_rmse_db"])
+                break
+        if "holdout_critical_rmse_db" in rdf.columns:
             hold = float(rdf.iloc[0]["holdout_critical_rmse_db"])
+            break
 
     with PdfPages(output_pdf) as pdf:
         _cover(pdf, output_pdf, gain, variant, hold)

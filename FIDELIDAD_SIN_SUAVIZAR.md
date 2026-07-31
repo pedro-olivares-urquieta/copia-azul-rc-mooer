@@ -37,7 +37,7 @@ eq_smooth_diagnostic   → NO implementar
 - Contracción `EQ × reliability` hacia 0 dB  
 - Heurísticas físicas fijas B–E–A  
 
-## Resultado operativo (V17; V18 no lo supera)
+## Resultado operativo (V19 presencia robusta)
 
 La métrica de verdad es el **error espectral Café+EQ+gain vs Azul** en bandas críticas (0.5–8 kHz), no el parecido visual a los puntos V4.1.
 
@@ -45,15 +45,18 @@ Hold-out crítico (CALIB=`A_12,C_12,E_12,C_chromatic` / HOLD=`B_12,D_12,G_12,C_2
 
 | Variante | RMSE hold | bias 2–4 kHz |
 |---|---:|---:|
-| v15_faithful_recal | **4.131** | +0.69 |
-| **v17_v15w_weighted_all (operativa)** | **4.132** | **+0.36** |
+| **v19_presence_robust (operativa)** | **4.100** | **+0.056** |
+| v17_v15w_weighted_all | 4.132 | +0.36 |
+| v15_faithful_recal | 4.131 | +0.69 |
 | v16_faithful | 4.320 | +0.78 |
-| V18 phase-first / event-conf / residual race | ≥4.57 | — |
-| V18 híbrido V17×phase-first | ≥4.69 | — |
-| band-scale nested CV | ~4.13 | peor bias |
+| V18 phase-first / event-conf | ≥4.57 | — |
 | v12_energy_neutral | 5.386 | −1.14 |
 
-**Operativa:** `v17_v15w_weighted_all` — observaciones estilo V15 + mediana ponderada por confianza de alineación + repetibilidad de fase; `presence_scale≈0.38`; gain ≈ **−11.99 dB**.
+**Operativa:** `v19_presence_robust` — misma base V15/V17 + **pesos robustos en 1.5–6.5 kHz** (baja E_12/B_12 que inflaban presencia); `presence_scale≈0.32`; gain ≈ **−12.01 dB**.
+
+### Por qué la presencia “se sentía débil”
+
+No era un EQ globalmente bajo: el bias mediano tras V17 ya era ~0 dB. El problema era **desacuerdo entre parejas** (E_12/B_12 muy brillantes, C_24/D_12 opacos). La escala global 0.38 aplastaba a todos por culpa de los outliers. V19 baja el peso de esos outliers solo en presencia.
 
 ### V18 — qué se probó y qué no mejoró la copia
 
@@ -68,13 +71,14 @@ Con las **mismas 16 parejas**, se adoptaron del informe V4.1 palancas que aún f
 | Híbrido V17×phase-first | RMSE ≥4.69 |
 | Escalas locales 1–2 kHz / 2–4 kHz (nested CV) | RMSE casi igual, **bias peor** |
 
-Conclusión: con esta evidencia, **complicar la agregación no copia mejor**. Lo que sí aportó (V17) es peso de pareja + escala de presencia por render. El cuello sigue siendo N=16 AAC, no la densidad de la curva.
+Conclusión V18: más agregadores V4.1 no bastaban. V19 sí mejoró al atacar el desacuerdo de presencia.
 
 Archivos:
 
-- `CURVA_COPIA_OPERATIVA.csv` / `GAIN_COPIA_OPERATIVA.csv` (sigue V17)
-- `IMPLEMENTACION_FIEL_V17.json` + diagnósticos `*V18*`
-- Audios: `renders/FIDELIDAD_V17/` (operativa) y `FIDELIDAD_V18/` (diagnóstico)
+- `CURVA_COPIA_OPERATIVA.csv` / `GAIN_COPIA_OPERATIVA.csv` (**V19**)
+- `IMPLEMENTACION_FIEL_V19.json`, `PESOS_PRESENCIA_ROBUSTOS_V19.csv`
+- Audios: `renders/FIDELIDAD_V19/`
+- PDF: `INFORME_COPIA_AZUL_FIEL.pdf`
 - Unified: `--variant faithful`
 
 ## Reproducir
@@ -82,6 +86,6 @@ Archivos:
 ```bash
 AZUL_OUT_DIR=modules/emulate_azul/_runs/det_A/results \
 AZUL_RENDERS_DIR=modules/emulate_azul/_runs/det_A/renders \
-python3 modules/emulate_azul/code/improve_v17.py && \
-python3 modules/emulate_azul/code/improve_v18.py
+python3 modules/emulate_azul/code/improve_v19.py && \
+python3 -m modules.unified informe --mode fidelity
 ```

@@ -34,3 +34,4 @@ V18,Phase-first+event conf+residual race,DONE,True,improve_v18; no bate V17 hold
 §26,Confianza evento enriquecida,DONE,False,PESOS_EVENTO_V18; empeora fidelidad vs match_cost simple
 §27-29,Mezcla phase-first PAIR,DONE,False,v18_pf_*; bias mejor a veces pero RMSE hold peor
 BandScale,Escalas locales 1-2k/2-4k nested,DONE,True,FIDELIDAD_BANDSCALE_NESTED_V18; no promover (bias)
+V19,Presencia robusta anti-outlier,DONE,True,v19_presence_robust operativa; hold 4.10 bias2k4k 0.06; baja E12/B12

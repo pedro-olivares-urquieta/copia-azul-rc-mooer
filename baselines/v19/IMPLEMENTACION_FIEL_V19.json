@@ -1,0 +1,78 @@
+{
+  "version": "V19.0",
+  "intent": "Robust presence aggregation without smoothing",
+  "operative_variant": "v19_presence_robust",
+  "gain_db": -12.011933081005811,
+  "presence_scale": 0.32,
+  "beat_v17": true,
+  "presence_band_hz": [
+    1500.0,
+    6500.0
+  ],
+  "holdout_ranking": [
+    {
+      "variant": "v19_presence_robust",
+      "holdout_critical_rmse_db": 4.100028878623228,
+      "bias_2k4k_db": 0.055666132494328835,
+      "bias_1k2k_db": -0.42591910184563564,
+      "gain_db": -12.011933081005811,
+      "presence_scale": 0.32,
+      "abs_bias_2k4k": 0.055666132494328835
+    },
+    {
+      "variant": "v19_stitch_w_rob",
+      "holdout_critical_rmse_db": 4.100623366246615,
+      "bias_2k4k_db": 0.05591722571273228,
+      "bias_1k2k_db": -0.41854898367369764,
+      "gain_db": -12.011927397824476,
+      "presence_scale": 0.32,
+      "abs_bias_2k4k": 0.05591722571273228
+    },
+    {
+      "variant": "v19_weighted",
+      "holdout_critical_rmse_db": 4.132049422961849,
+      "bias_2k4k_db": 0.35519751539345945,
+      "bias_1k2k_db": 0.17528450897451936,
+      "gain_db": -11.994639198585128,
+      "presence_scale": 0.38,
+      "abs_bias_2k4k": 0.35519751539345945
+    },
+    {
+      "variant": "v17_operative",
+      "holdout_critical_rmse_db": 4.132049422961849,
+      "bias_2k4k_db": 0.35519751539345945,
+      "bias_1k2k_db": 0.17528450897451936,
+      "gain_db": -11.994639198585128,
+      "presence_scale": NaN,
+      "abs_bias_2k4k": 0.35519751539345945
+    },
+    {
+      "variant": "v19_fretted_presence_robust",
+      "holdout_critical_rmse_db": 4.274877750584748,
+      "bias_2k4k_db": 0.995035047026734,
+      "bias_1k2k_db": 0.5788966458153395,
+      "gain_db": -11.81260008242583,
+      "presence_scale": 0.3,
+      "abs_bias_2k4k": 0.995035047026734
+    },
+    {
+      "variant": "v19_stitch_fretted",
+      "holdout_critical_rmse_db": 4.280765137226421,
+      "bias_2k4k_db": 0.9959767440140912,
+      "bias_1k2k_db": 0.6037275562826719,
+      "gain_db": -11.812561425323203,
+      "presence_scale": 0.3,
+      "abs_bias_2k4k": 0.9959767440140912
+    },
+    {
+      "variant": "v19_flat",
+      "holdout_critical_rmse_db": 4.657712295502154,
+      "bias_2k4k_db": 0.294641699541637,
+      "bias_1k2k_db": 0.15926749755766367,
+      "gain_db": -11.871284124376867,
+      "presence_scale": 0.42,
+      "abs_bias_2k4k": 0.294641699541637
+    }
+  ],
+  "note": "Presence weakness was pair disagreement (C_12 bright / C_24 dull), not a uniformly low EQ. Robust pair weights target that."
+}

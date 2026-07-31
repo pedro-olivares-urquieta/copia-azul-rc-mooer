@@ -1,9 +1,9 @@
 {
   "pdf": "/workspace/INFORME_COPIA_AZUL_FIEL.pdf",
   "results_dir": "/workspace/modules/emulate_azul/_runs/det_A/results",
-  "operative_variant": "v17_v15w_weighted_all",
-  "gain_db": -11.994639198585128,
-  "holdout_rmse_db": 4.132049422961849,
+  "operative_variant": "v19_presence_robust",
+  "gain_db": -12.011933081005813,
+  "holdout_rmse_db": 4.100028878623228,
   "pages": [
     "cover_review",
     "cafe_azul_spectra",
@@ -17,5 +17,5 @@
     "rc_composition",
     "closing"
   ],
-  "generated_at_utc": "2026-07-31T08:44:36.739327+00:00"
+  "generated_at_utc": "2026-07-31T08:59:44.045463+00:00"
 }

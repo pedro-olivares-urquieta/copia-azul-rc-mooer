@@ -1,9 +1,9 @@
 # Mapa metodológico: informe V4.1 ultraprofundo ↔ nuestro pipeline
 
 **Fecha:** 2026-07-31  
-**Nuestro stack:** V10.2 → V11 → V12 → V13 → V14 → V15 → V16 → **V17 (copia operativa)**  
+**Nuestro stack:** V10.2 → … → V17 → V18 → **V19 (copia operativa, presencia robusta)**  
 **Referencia:** informe metodológico ultraprofundo Café→Azul (V4.1, 912 pts, PSD Hann)  
-**Entregable de copia:** `CURVA_COPIA_OPERATIVA.csv` (V17: V15-weights + pair confidence) — ver `FIDELIDAD_SIN_SUAVIZAR.md`
+**Entregable de copia:** `CURVA_COPIA_OPERATIVA.csv` (V19 presence-robust) — ver `FIDELIDAD_SIN_SUAVIZAR.md`
 
 Regla de oro: **no adoptar como “mejora” algo que ya hacemos mejor**, ni reescribir la ciencia de `build_v10_2` de un golpe. Lo adoptado entra como post-proceso trazable (`improve_v12`…`v14`).
 
