@@ -1,0 +1,241 @@
+{
+  "baseline_id": "v10_2_published",
+  "recorded_at_utc": "2026-07-30T23:56:37.002457+00:00",
+  "git_commit": "6bb5e39112f5d3c507b8ac5ad7398c03673ebc14",
+  "source_dir": "modules/emulate_azul/results",
+  "n_files": 58,
+  "files": {
+    "01_CURVAS_PRINCIPALES.png": {
+      "sha256": "ef6d27b4008527a004bb5bd5480f18bb70bfc2628fd8eb9c88fbf6713cd725e3",
+      "bytes": 160083
+    },
+    "02_CURVA_20_120_LINEAR.png": {
+      "sha256": "6a27cf1496bb2a084e1c44633c867e4b11c603e1426ac84efdf21057a3cbc3fc",
+      "bytes": 114059
+    },
+    "03_CURVA_2_12KHZ.png": {
+      "sha256": "b4b1d75da5941d19c176d0c88a06cb52d84bfaf35b6e365efa800b6284356223",
+      "bytes": 86390
+    },
+    "04_SOPORTE.png": {
+      "sha256": "554d68254f5187cbdbe23fd74bda7b1e11588ce0d5a3fb8b5f9253dab2689daf",
+      "bytes": 113566
+    },
+    "05_MAPA_ATAQUES.png": {
+      "sha256": "a41f53e2d4df6c3e08b8cb964fa1097a724dfcc16118fe3b3642b60b23ae9490",
+      "bytes": 71849
+    },
+    "06_MATCHING_COSTOS.png": {
+      "sha256": "15d912c7874dc7bd6380b27bceac8585da8748af6885a2fdc8dbc36c380d8da6",
+      "bytes": 33595
+    },
+    "07_CICLOS_POR_FRECUENCIA.png": {
+      "sha256": "5d211e77584324894510c63c6209cd0be4e1b12d881f4fe3bb1152f9a64517af",
+      "bytes": 82681
+    },
+    "08_METRICAS_MODELOS.png": {
+      "sha256": "8a213c8f95e6cb1b826a43e96e2442cfe7910af09fb7b103b1b77cd38808e8e8",
+      "bytes": 96073
+    },
+    "09_CURVAS_POR_FASE.png": {
+      "sha256": "082d10245312114590f87ed172b44513437648d3ec0cfb240b28c40ae0abe9b1",
+      "bytes": 146145
+    },
+    "10_COMPARACION_V9_V10_1_V10_2.png": {
+      "sha256": "a78d46388e5777d21d0999235cbce7ce2390ff02630c9f2adb2b232298bc2e01",
+      "bytes": 143419
+    },
+    "11_GAIN_POR_PAREJA_Y_FUENTE.png": {
+      "sha256": "935b5fb27275c9d338f078f68054f6b03a79cd1933b9be6f9c034c8b829de40b",
+      "bytes": 110589
+    },
+    "ATAQUES_MULTIESCALA_V10_2.csv": {
+      "sha256": "718d4acdebd14d27f41dcfbdf56d59b76e15f6f5a9fd8577d8d2ff5e2024d72f",
+      "bytes": 1860694
+    },
+    "AUDITORIA_800_1600_HZ.csv": {
+      "sha256": "7a24814c405074ddfe69727c82eab00b55dc77031b7cec84232713b8dd54ba13",
+      "bytes": 1070
+    },
+    "BOOTSTRAP_PAREADO_V9_V10_1_V10_2.csv": {
+      "sha256": "71e0a223c3a5dbfaccdc8005a5bd522570b385a347bd0244a27fc3306926adc8",
+      "bytes": 427
+    },
+    "COMPARACION_FREQUENCY_STRING_JOINT.csv": {
+      "sha256": "63ef9049da5213c9684ce03419f79faa8b71a383595ea157f362a6a2abd189f4",
+      "bytes": 302
+    },
+    "COMPARACION_MODELOS_MISMO_PIPELINE.csv": {
+      "sha256": "d24af6df5eb96eb7976befbc246977319ec17326a40f79f8bf8479a8bf8d47f4",
+      "bytes": 1029
+    },
+    "CONFIG_V10_2.json": {
+      "sha256": "367a8baf3f9e60495efe0a49df4c2da80e365f621e7de6aeab6e995759966425",
+      "bytes": 879
+    },
+    "CORRELACION_EQ_OFFSETS_CUERDA.csv": {
+      "sha256": "18630556afe403efc996cf29b096d62c83d437408163ddb265fd704c8f764804",
+      "bytes": 8919
+    },
+    "CURVAS_DENSAS_V10_2.csv": {
+      "sha256": "357c15ead3eab50128050353b910e510551530fc8a3bb1dd9d5217d48bfba3b9",
+      "bytes": 1357841
+    },
+    "CURVA_20_120_HZ_V10_2.csv": {
+      "sha256": "4c6e2b795728a97811a7bdf3ac56f9785a1303f7e358d18f64c5171a5a0f22f6",
+      "bytes": 342895
+    },
+    "ESPACIOS_Y_SOLAPAMIENTOS_V10_2.csv": {
+      "sha256": "428a0e0a7f201a7f7d61098ad5aecef595187169ae3e866571ea2754da849217",
+      "bytes": 70512
+    },
+    "FRONTERA_PARETO_CENTRAL_ROBUST.csv": {
+      "sha256": "9988541f6191093cbfd5df26b1b16d690ee6ca2a4036bf9d312a3a1fcccf0350",
+      "bytes": 1392
+    },
+    "FUNDAMENTALES_CORREGIDAS_V10_2.csv": {
+      "sha256": "7e478729540e6d691049f3c77aced922bd3d26105f15035c6230031f3f8675ee",
+      "bytes": 562048
+    },
+    "GAIN_GLOBAL_V10_2.csv": {
+      "sha256": "b2e53396cab0ad96aa4d456d230c4c7fafed6474a5049ac32bc8fc49648eef51",
+      "bytes": 239
+    },
+    "GAIN_POR_PAREJA_Y_FUENTE_V10_2.csv": {
+      "sha256": "6f6f172a68484db6cfbee73d63f3509a33f9597d0998892b877c1683a02b10cc",
+      "bytes": 2075
+    },
+    "HASHES_WAV_ORIGINALES.csv": {
+      "sha256": "12c035e4ef34d5e154545ab7fd3a784439cf2946da6f43965be8389686e2c7d6",
+      "bytes": 3373
+    },
+    "INFORME_ANALISIS_TIEMPO_FRECUENCIA.md": {
+      "sha256": "ab0af78630cc6ea146d9e894dddd08f1ee3663bcb44386526fe7e1c1e04fa952",
+      "bytes": 336
+    },
+    "INFORME_ATAQUES_MULTIESCALA.md": {
+      "sha256": "bcbdbfcd8c7727e6aeb8bf676d3e45dae29494076e49953dcbf5689ce376d964",
+      "bytes": 205
+    },
+    "INFORME_COMPARACION_V9_V10_1_V10_2.md": {
+      "sha256": "ee60df595d89bbf155ff5d223f1cc04b803523075761d480af8fd0a6542af9af",
+      "bytes": 1140
+    },
+    "INFORME_ESPECIALIZADO_20_60_HZ.md": {
+      "sha256": "992635088d397e53eef63a96ef30638e80e82e01fb3c0a9ee62867e3081a7026",
+      "bytes": 269
+    },
+    "INFORME_IDENTIFICABILIDAD.md": {
+      "sha256": "da7907f55d33d4c645fea81bc057870571dc976c197830712afc0632440eb019",
+      "bytes": 421
+    },
+    "INFORME_MATCHING_INTELIGENTE.md": {
+      "sha256": "61991c722d573f44769bb097dc33cc856b7b8a8e8a71e5cf540a19fe28162b00",
+      "bytes": 218
+    },
+    "INFORME_REFINAMIENTO_AGUDOS.md": {
+      "sha256": "fa947e284c85c9e82ff693bd1c8bd69b911529f0dad372750f4ae3a73be04869",
+      "bytes": 206
+    },
+    "INFORME_REGIONES_NO_IDENTIFICADAS.md": {
+      "sha256": "d577bfabacd3f2ed737d2c31168e3d14150aaa31b16823269d51b708561bd815",
+      "bytes": 200
+    },
+    "INFORME_SIGNIFICANCIA_PRACTICA.md": {
+      "sha256": "ae9ba42ae24f22a0156b2de14d961522ddd965c016d628dc615f3cdf2f18a339",
+      "bytes": 663
+    },
+    "INFORME_TECNICO_AUTONOMO_V10_2.md": {
+      "sha256": "72187dc37714c38c695406bdea843db201d7c1771bab0ca2699c808e80a45af9",
+      "bytes": 12626
+    },
+    "INFORME_VALIDACION.md": {
+      "sha256": "c15a9a78b1016359a0649e8a775a8cd2a2d2def3e1b850bbf9a80db44d7dc106",
+      "bytes": 24686
+    },
+    "INVENTARIO_ENTREGABLES_V10_2.csv": {
+      "sha256": "2296ad8031c4af69f32bee612f6457690c337b5f377c11059200198efd0ed823",
+      "bytes": 15050
+    },
+    "MAPA_TIEMPO_FRECUENCIA_DIFERENCIAL.csv": {
+      "sha256": "b2c5cfaa4daa67498d91c3d5d06997d8f27622d1a3058c5995acc1c71c610cc8",
+      "bytes": 1561858
+    },
+    "MATCHING_BANDAS_V10_2.csv": {
+      "sha256": "c1ed8d717245f71655d200402406f986ffc9a92629798952615845bff2e50aea",
+      "bytes": 4787
+    },
+    "MATCHING_EVENTOS_V10_2.csv": {
+      "sha256": "aafd871daa02e1a41095ceecbb9f3e4b941eed498826487144946a64065098e3",
+      "bytes": 134495
+    },
+    "MATRIZ_IDENTIFICABILIDAD_CUERDA_FRECUENCIA.csv": {
+      "sha256": "a7a8afc77cb5e981a427cb0263601c1171fa244fe7e7e228b69671c1abb17af8",
+      "bytes": 567
+    },
+    "METRICAS_LOCALES_Y_TEMPORALES_V10_2.csv": {
+      "sha256": "6badb9bf7fb9f27f2fa1d397d27d98f38aa756ff41193bfbd4523ad6f7b07e33",
+      "bytes": 12556
+    },
+    "METRICAS_POR_PAREJA_V10_2.csv": {
+      "sha256": "adf66fd1a75735f2b8930951c62d51f5dfecf1b0e71009bb506e0339d4b2d46b",
+      "bytes": 12327
+    },
+    "PRESET_PARAMETRICO_V10_2.csv": {
+      "sha256": "2ffafc5e1096b48c6f9a32aaf3888403c6734dfdec260c1274207d1296300c7d",
+      "bytes": 232
+    },
+    "PUNTOS_RESUMIDOS_V10_2.csv": {
+      "sha256": "56087199461ef7d8657962144bd57d7ce3ae3e74da9677f2366d383e7ac82048",
+      "bytes": 8951
+    },
+    "QUE_CONTIENEN_REALMENTE_LOS_AUDIOS_V10_2.csv": {
+      "sha256": "e9e6126e0b970c72506d708385e536a885f5990c374ecfac89c20cc75ff86424",
+      "bytes": 1445
+    },
+    "RENDER_INVENTORY_V10_2.csv": {
+      "sha256": "daea2ec80a821de55f12481deb014c5b70ac6dc59862eeee4cee871764825410",
+      "bytes": 1315
+    },
+    "SELECCION_MODELOS_V10_2.csv": {
+      "sha256": "dc3969c0873c4df33ddb0bbc51b4745c798bb1613f1586ab7a3e51e6e3857234",
+      "bytes": 1390
+    },
+    "SIGNIFICANCIA_PRECISE_VS_ABLACIONES.csv": {
+      "sha256": "414f7c7ebb10db29d74309053b9fdaf3ff10de4e80c3bbe0ad225d1eeb863137",
+      "bytes": 322
+    },
+    "SIGNIFICANCIA_PRECISE_VS_NO_HIGH.csv": {
+      "sha256": "c911415d00b5f24c2128d383185dc99f8fcda05d0729bc0095e3a36aa6611b94",
+      "bytes": 216
+    },
+    "SIGNIFICANCIA_PRECISE_VS_NO_SUB.csv": {
+      "sha256": "0cfccfe48b76214f5e6919c39fd06b5de5c5d0eb34a93380345e910192190488",
+      "bytes": 210
+    },
+    "TONAL_HARMONICS_CORRECTED_V10_2.csv": {
+      "sha256": "a2775db4256686a13fc1406f0f0cf738672adcaa773613fb82d46bc0acec5d7d",
+      "bytes": 3357260
+    },
+    "TRAYECTORIAS_ARMONICAS_V10_2.csv": {
+      "sha256": "b2c5cfaa4daa67498d91c3d5d06997d8f27622d1a3058c5995acc1c71c610cc8",
+      "bytes": 1561858
+    },
+    "TRAYECTORIAS_FUNDAMENTALES_V10_2.csv": {
+      "sha256": "4ddef9cceee7eb32aa3efaf4e210d082e4a707d59273f2aa81b4da685a9ece13",
+      "bytes": 621389
+    },
+    "VALIDACION_CANDIDATOS_V10_2.csv": {
+      "sha256": "91e307f48909de3b9a49ad6b1e477a2030b6f81065b79c76b33c549376800a7b",
+      "bytes": 12888
+    },
+    "VENTANAS_ADAPTATIVAS_V10_2.csv": {
+      "sha256": "fdde6875e7f35841eadb6e6e60fe914d269b6a5d6335aa1b06aa9c242bec72b3",
+      "bytes": 722211
+    },
+    "repair_preview.npz": {
+      "sha256": "3a802178583dfd69237f34760384fbf723280a2d009d1ecdc4f2cf7d581e96e0",
+      "bytes": 1078
+    }
+  }
+}

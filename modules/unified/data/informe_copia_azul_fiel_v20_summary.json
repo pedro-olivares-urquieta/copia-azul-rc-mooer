@@ -1,0 +1,21 @@
+{
+  "pdf": "INFORME_COPIA_AZUL_FIEL_V20.pdf",
+  "results_dir": "/workspace/modules/emulate_azul/_runs/det_A/results",
+  "operative_variant": "v19_presence_robust+v20_hard_10k",
+  "gain_db": -12.011933081005813,
+  "holdout_rmse_db": 4.100028878623228,
+  "pages": [
+    "cover_review",
+    "cafe_azul_spectra",
+    "cafe_azul_delta",
+    "operative_eq",
+    "all_transfers",
+    "v41_landmarks",
+    "phase_curves",
+    "fidelity_copy",
+    "holdout_ranking",
+    "rc_composition",
+    "closing"
+  ],
+  "generated_at_utc": "2026-07-31T09:59:58.008404+00:00"
+}

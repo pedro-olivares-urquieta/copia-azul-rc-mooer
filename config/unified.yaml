@@ -1,0 +1,17 @@
+# Orchestrator: Azul(+gain) + RC → one GE300 preset, then process bass audio.
+seed: 20260731
+emulate_azul_config: config/emulate_azul.yaml
+rc_config: config/rc_pedals.yaml
+mooer_config: config/mooer_eq.yaml
+chains:
+  - azul
+  - azul+rc
+  - mooer
+  - rc+mooer
+mooer:
+  lock_global_gain_db: 3.0
+  lock_band_18000_db: -16.0
+  # free_global_search scans [-60, +3] diagnostically; presets stay locked.
+  allow_free_global_search: true
+artifacts:
+  informe_pdf: modules/unified/data/INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf

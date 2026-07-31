@@ -1,0 +1,83 @@
+{
+  "target_name": "azul_faithful_plus_rc_guitar_locked18k",
+  "gains_display_db": [
+    -16.0,
+    -12.5,
+    7.0,
+    1.5,
+    -16.0
+  ],
+  "frequencies_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "q_display": 0.3,
+  "global_gain_db": 3.0,
+  "score": 3.983649337021699,
+  "metrics": {
+    "Subgraves": 2.728114408662352,
+    "Graves": 1.7327694532399622,
+    "Medios": 2.6840561258576137,
+    "Presencia": 1.691933723857013,
+    "Brillo": 2.5116864638162575,
+    "worst": 2.728114408662352,
+    "avg": 2.2697120350866395,
+    "global": 2.3144051517255377,
+    "p95": 3.7693688095185847,
+    "r2540": 2.4407490627110446,
+    "ae30": 2.522067877337573,
+    "anti_error_score": 3.983649337021699,
+    "full_curve": {
+      "Subgraves": 2.728114408662352,
+      "Graves": 1.7327694532399622,
+      "Medios": 2.6840561258576137,
+      "Presencia": 1.691933723857013,
+      "Brillo": 2.5116864638162575,
+      "worst": 2.728114408662352,
+      "avg": 2.2697120350866395,
+      "global": 2.3150287814952586
+    }
+  },
+  "meta": {
+    "mode": "azul_plus_rc",
+    "azul_variant": "faithful",
+    "include_gain": true,
+    "gain_db": -12.938934507503346,
+    "rc_setup": "guitar",
+    "compose": "plus",
+    "locked_gains_db": {
+      "4": -16.0
+    },
+    "engine": {
+      "quality": "high",
+      "mode": "exhaustive_discrete_global",
+      "n_free_bands": 4,
+      "grid_step_db": 0.5,
+      "proven_global_min": true
+    },
+    "constraints": {
+      "frequencies_hz": [
+        30.0,
+        148.0,
+        735.0,
+        3637.0,
+        18000.0
+      ],
+      "q_display": 0.3,
+      "global_gain_db": 3.0,
+      "band_18000_locked_db": -16.0
+    }
+  },
+  "order_hz": [
+    30.0,
+    148.0,
+    735.0,
+    3637.0,
+    18000.0
+  ],
+  "pedal": "MOOER GE300",
+  "notes": "Gains are GE300 display values at 30/148/735/3637/18000 Hz. Global locked at +3 dB. Q display locked at 0.3. Band 18000 Hz may be locked (see meta.locked_gains_db). High-coverage anti-error engine (DE/annealing/ILS/pairwise/triple)."
+}

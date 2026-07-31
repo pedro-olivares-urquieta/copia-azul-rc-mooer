@@ -1,0 +1,37 @@
+section,item,status,ours_better,evidence
+§7,Reproducir baseline antes de modificar,DONE,True,baselines/v10_2_published + det_A/B bit-identical
+§8,Auditoría inicial + plan,DONE,True,AUDITORIA_INICIAL + PLAN_DE_MEJORA
+§11,QC de audio (códec/nivel/clip/DC/SHA),DONE,True,ffprobe + DIAGNOSTICO_PISO_RUIDO + NIVELES_AUDIO_HEADROOM_V13
+§12,Onsets deterministas,DONE,True,onsets.py + tests/test_onsets.py
+§13,Curvas ataque/sustain publicadas,DONE,True,CURVAS_POR_FASE_V13 + CURVA_ATAQUE/SUSTAIN_* + multiescala
+§14,F0 refinada en uso,DONE,True,f0_refine ±3.5% wired; V4.1 label-guided
+§15,Separar timbre y gain,DONE,True,V11 loop + V12 energy-neutral
+§16,Máscara open >300 Hz,PARTIAL,True,hard cut upstream; soft 280-300 Hz inerte
+§17,Graves/ciclos como peso,DONE,True,cycles_score V12; 1939 obs a cero
+§18,Prior AAC graduado,DONE,True,CODEC_PRIOR in improve_v12
+§19,Gain multi-estimador + headroom,DONE,True,GAIN_PROFUNDO_V13 + GAIN_NO_OPEN_SUSTAIN_V14
+§20,Modelo jerárquico / N_eff Kish,PARTIAL,True,Kish sí; pair-first V14; no random effects formales
+§22,12 curvas obligatorias nombradas,PARTIAL,True,alias V13/V14; faltan algunos nombres §22 históricos
+§23,Suavizado regional held-out,DONE,True,SUAVIZADO_REGIONAL_V14.csv + parsimonia 0.08 dB
+§25,LOFO/LOSO/register/file/exercise,DONE,True,LOFO+LOSO V11; LORO+LOPO+LOEO V13
+§26,Validación auditiva,MISSING,False,unified process existe; no set formal §26
+§28,"MOOER global -60..+3, 1:1",DONE,True,MooerModel.global_gain_* + global_gain_grid(); presets siguen en +3
+§29,Calibración versionada con hash,DONE,True,data/CALIBRATION_PROVENANCE.json
+§30,Desacuerdo ataque-sustain en fiabilidad,DONE,True,FIABILIDAD_V14 phase_score
+§31,Agregación pair-first,DONE,True,CURVA_PAIR_FIRST_V14.csv
+§35,config/ multi-módulo,DONE,True,config/{emulate_azul,mooer_eq,rc_pedals,unified}.yaml
+§36,Manifiesto por ejecución,DONE,True,run_manifest.py
+§38,Tests unitarios/integración,DONE,True,tests/ (9+ cases)
+§39,CLI python -m modules.X,DONE,True,modules/*/__main__.py
+N_eff,Soporte efectivo medido,DONE,True,effective_pairs_kish mediana 1.26
+Det,Bit-reproducibilidad,DONE,True,54/54 archivos idénticos det_A vs det_B
+Presencia,Identificabilidad 2-6 kHz,DONE,True,V14: pair-first sube hacia V4.1 pero LOPO MAE~11 dB
+V17,Copia fiel hold-out + bias 2-4 kHz,DONE,True,v17_v15w_weighted_all operativa; RMSE~4.13 bias2k4k~0.36; no smooth
+§24,Demean escalar por pareja,PARTIAL,True,V16/V17 dm_* empeora fidelidad con estas sesiones; diagnóstico
+§31,Pesos pareja por alineación,DONE,True,PESOS_PAREJA_ALINEACION_V17 + mediana ponderada
+§29.1,Repetibilidad fase como peso,DONE,True,phase_repeatability_weights en improve_v17
+V18,Phase-first+event conf+residual race,DONE,True,improve_v18; no bate V17 hold-out; operativa sigue V17
+§26,Confianza evento enriquecida,DONE,False,PESOS_EVENTO_V18; empeora fidelidad vs match_cost simple
+§27-29,Mezcla phase-first PAIR,DONE,False,v18_pf_*; bias mejor a veces pero RMSE hold peor
+BandScale,Escalas locales 1-2k/2-4k nested,DONE,True,FIDELIDAD_BANDSCALE_NESTED_V18; no promover (bias)
+V19,Presencia robusta anti-outlier,DONE,True,v19_presence_robust operativa; hold 4.10 bias2k4k 0.06; baja E12/B12

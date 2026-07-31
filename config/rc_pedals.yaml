@@ -1,0 +1,10 @@
+# RC pedal reconstruction entry point.
+seed: 6000
+audio_dir: audio/rc_response
+sample_rate_hz: 44100
+grid_ppo: 192
+high_confidence_limit_hz: 15500
+optimization_limit_hz: 18000
+setups: [bajo, hibrido, guitarra]
+outputs:
+  refined_curves: modules/rc_pedals/data/refined_curves_192ppo.csv

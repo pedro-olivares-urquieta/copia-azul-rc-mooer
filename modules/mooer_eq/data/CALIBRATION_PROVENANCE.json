@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "model": "Mooer GE300 parametric EQ (5 fixed bells)",
+  "display_to_effective": {
+    "band_gain": {
+      "formula": "gain_effective_db = gain_coeff * gain_display_db",
+      "gain_coeff": 0.75,
+      "mapping": "linear_scale_not_1to1"
+    },
+    "global_gain": {
+      "formula": "response_db += global_gain_db",
+      "mapping": "1to1",
+      "range_db": [-60.0, 3.0],
+      "step_db": 0.5,
+      "default_locked_db": 3.0,
+      "note": "Hardware global control spans -60..+3 dB and adds directly to the response. Operational presets currently lock +3 dB; free search over the full range is supported by the model API."
+    },
+    "q": {
+      "formula": "q_effective = q_display * (q_base + q_gain_slope * gain_display_db)",
+      "q_display": 0.3,
+      "q_base": 0.569,
+      "q_gain_slope": -0.0026
+    }
+  },
+  "centers_hz": [30, 148, 735, 3637, 18000],
+  "band_gain_display_range_db": [-16, 16],
+  "band_gain_step_db": 0.5,
+  "sources": [
+    {
+      "path": "modules/mooer_eq/config/config.json",
+      "sha256": "f65c23ddce7eb7492c006775becb2fb90289cc87990dd47f6f912bd059b2d940",
+      "role": "canonical numeric constants for this package"
+    },
+    {
+      "path": "modules/rc_pedals/code/01_audio_reconstruction_and_384_audit.py",
+      "sha256": "53c5dc667b09af10e93776def91c7eadcfbc9a942008fa6b0c92f7336ebcfd46",
+      "role": "historical declaration of gain_effective_coefficient=0.75 and Q law"
+    }
+  ],
+  "uncertainty": {
+    "scenario": "not_measured_on_unit_under_test",
+    "gain_coefficient_sd": 0.015,
+    "q_base_sd": 0.010,
+    "q_gain_slope_sd": 0.0003,
+    "center_frequency_relative_sd": 0.003,
+    "note": "SDs are scenario values carried from the reconstruction audit, not a fresh laboratory calibration of this specific GE300."
+  },
+  "honesty": "gain_coeff=0.75 is an inherited calibrated coefficient, not re-derived in this repository from a swept unit measurement. Changing it requires a new hashed provenance entry."
+}

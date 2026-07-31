@@ -171,17 +171,34 @@ def cmd_process(args: argparse.Namespace) -> int:
 
 
 def cmd_informe(args: argparse.Namespace) -> int:
-    """Generate ordered PDF: Café→Azul, RC curves, 3 Mooer presets (18k=-16)."""
+    """Generate PDF report(s): fidelity Café→Azul and/or Azul+RC→Mooer."""
+    from report_azul_pdf import generate_azul_fidelity_report
+
     paths = discover_repo()
-    out = Path(args.output) if args.output else paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf"
-    summary = generate_report(
-        out,
-        de_seeds=args.de_seeds,
-        random_starts=args.random_starts,
-        seed=args.seed,
-        paths=paths,
-    )
-    print(json.dumps(summary, indent=2, ensure_ascii=False))
+    mode = getattr(args, "mode", "fidelity")
+    if mode in ("fidelity", "both"):
+        out = (
+            Path(args.output)
+            if args.output and mode == "fidelity"
+            else paths.repo / "INFORME_COPIA_AZUL_FIEL.pdf"
+        )
+        summary = generate_azul_fidelity_report(out, paths=paths)
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
+    if mode in ("mooer", "both"):
+        out = (
+            Path(args.output)
+            if args.output and mode == "mooer"
+            else paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER_V22.pdf"
+        )
+        summary = generate_report(
+            out,
+            de_seeds=args.de_seeds,
+            random_starts=args.random_starts,
+            seed=args.seed,
+            paths=paths,
+            azul_variant=getattr(args, "variant", "faithful") or "faithful",
+        )
+        print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0
 
 
@@ -224,8 +241,17 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument(
         "--variant",
         default="central",
-        choices=["central", "robust", "safe", "parametric", "total"],
-        help="Azul curve variant (default: central)",
+        choices=[
+            "central",
+            "robust",
+            "safe",
+            "parametric",
+            "total",
+            "faithful",
+            "copy",
+            "operative",
+        ],
+        help="Azul curve variant (default: central; faithful=unsmoothed operative copy)",
     )
     common.add_argument(
         "--timbre-only",
@@ -272,7 +298,16 @@ def main(argv: list[str] | None = None) -> int:
     audio_opts.add_argument(
         "--variant",
         default="central",
-        choices=["central", "robust", "safe", "parametric", "total"],
+        choices=[
+            "central",
+            "robust",
+            "safe",
+            "parametric",
+            "total",
+            "faithful",
+            "copy",
+            "operative",
+        ],
     )
     audio_opts.add_argument("--timbre-only", action="store_true")
     audio_opts.add_argument(
@@ -315,13 +350,25 @@ def main(argv: list[str] | None = None) -> int:
 
     inf = sub.add_parser(
         "informe",
-        help="PDF orquestado: Café→Azul + RC + 3 presets Mooer (Q=0.3, 18k=-16)",
+        help="PDF: copia fiel Café→Azul (default) o orquestador Azul+RC→Mooer",
+    )
+    inf.add_argument(
+        "--mode",
+        default="fidelity",
+        choices=["fidelity", "mooer", "both"],
+        help="fidelity=EQ fiel+curvas Café/Azul (default); mooer=presets GE300; both",
     )
     inf.add_argument(
         "--output",
         "-o",
         default=None,
-        help="PDF path (default: INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf at repo root)",
+        help="PDF path (default depends on --mode)",
+    )
+    inf.add_argument(
+        "--variant",
+        default="faithful",
+        choices=["central", "robust", "safe", "parametric", "total", "faithful", "copy", "operative"],
+        help="Azul curve for mooer mode (default: faithful = V22 operativa)",
     )
     inf.add_argument("--de-seeds", type=int, default=12)
     inf.add_argument("--random-starts", type=int, default=2500)

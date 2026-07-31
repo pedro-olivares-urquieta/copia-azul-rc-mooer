@@ -1,0 +1,66 @@
+# Configuración científica versionada del pipeline Café→Azul.
+#
+# Antes, `lambda` se elegía por validación cruzada entre 8 candidatos cuyos
+# `central_score` difieren menos de 0.08 entre sí. Esa selección resultó
+# degenerada: la corrida publicada eligió [100,20,80,1] y una reproducción del
+# mismo código eligió [20,5,20,0.7], moviendo la curva hasta 2.3 dB en 2-4 kHz.
+#
+# `lambda_mode: fixed` congela el valor publicado para que las comparaciones
+# sean válidas. `lambda_mode: cv` restaura el comportamiento histórico.
+
+config_version: 1
+pipeline: emulate_azul
+baseline_ref: v10_2_published
+
+seed: 10202
+sample_rate: 44100
+
+regularization:
+  # fixed  -> usa lambda_central / lambda_robust
+  # cv     -> selecciona entre `candidates` (histórico, no determinista)
+  lambda_mode: fixed
+  lambda_central: [100, 20, 80, 1]
+  lambda_robust: [100, 20, 80, 1]
+  candidates:
+    - [20, 5, 20, 0.7]
+    - [50, 10, 40, 1]
+    - [100, 20, 80, 1]
+    - [200, 40, 150, 1.2]
+    - [400, 80, 300, 1.5]
+    - [80, 8, 20, 0.7]
+    - [160, 15, 50, 1]
+    - [300, 30, 100, 1.3]
+
+onsets:
+  # implementation: internal -> modules/emulate_azul/code/onsets.py (determinista)
+  #                 librosa  -> histórico, depende de la versión instalada
+  implementation: internal
+  n_mels: 128
+
+curve:
+  dense_points: 4096
+  low_points: 512
+  frequency_range_hz: [20, 20000]
+
+observations:
+  # Peso 0 = exclusión dura del contenido >300 Hz en cuerdas al aire.
+  open_above_300_weight: 0
+  snr_min_harmonic_db: 8
+  snr_min_harmonic_corrected_db: 10
+  snr_min_band_residual_db: 14
+  snr_min_gain_db: 10
+
+gain:
+  # gain_combined = w_fundamental * fundamental + w_energy * energy
+  w_fundamental: 0.65
+  w_energy: 0.35
+  bootstrap_iterations: 2000
+  bootstrap_seed: 10203
+
+validity:
+  # Regiones sin evidencia suficiente. La curva vale ~0 dB ahí por
+  # regularización, no por medición.
+  shrink_below_hz: 28
+  shrink_above_hz: 12000
+  # AAC ~100 kbps: el contenido por encima de este límite no es medible.
+  codec_reliable_max_hz: 15000

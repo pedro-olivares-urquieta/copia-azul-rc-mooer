@@ -13,13 +13,20 @@ from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
+# NumPy 2 removed the `trapz` alias; keep the identical trapezoidal rule.
+if not hasattr(np, 'trapz'):
+    np.trapz = np.trapezoid
+
 from repo_paths import ROOT, WAV, OUT, AUD, CODE, LEGACY, EXPORTS, AUDIO, ensure_runtime_dirs
 ensure_runtime_dirs()
 SR=44100; SEED=10202; RNG=np.random.default_rng(SEED)
-sys.path.insert(0,str(CODE)); import audio_utils_v7 as au
+sys.path.insert(0,str(CODE)); import audio_utils_v7 as au; import onsets; import run_config; import run_manifest
 PAIRS={p['key']:p for p in au.pairs}
-STRINGS=['B','E','A','D','G','C']; PHASES=['attack','stabilization','body','sustain','decay']
-PHASE_W={'attack':.08,'stabilization':.14,'body':.40,'sustain':.30,'decay':.08}
+STRINGS=['B','E','A','D','G','C']
+# V21: add dedicated `low` window (V4.1 60–760 ms) for sub-bass cycles.
+PHASES=['attack','stabilization','body','sustain','decay','low']
+PHASE_W={'attack':.08,'stabilization':.12,'body':.28,'sustain':.22,'decay':.08,'low':.22}
+OPEN_SOFT_HZ=300.0  # open-string evidence soft-stops here (mask 280–300 in v12)
 REGIONS=[(20,40,'20-40'),(40,60,'40-60'),(60,100,'60-100'),(100,160,'100-160'),(160,250,'160-250'),(250,400,'250-400'),(400,630,'400-630'),(630,1000,'630-1000'),(1000,1600,'1000-1600'),(1600,2500,'1600-2500'),(2500,4000,'2500-4000'),(4000,6300,'4000-6300'),(6300,8000,'6300-8000'),(8000,12000,'8000-12000'),(12000,16000,'12000-16000'),(16000,20000,'16000-20000')]
 DENSE_F=np.geomspace(20,20000,4096)
 LOW_F=np.geomspace(20,120,512)
@@ -83,7 +90,7 @@ def interp_log(f,x,y): return np.interp(np.log(f),np.log(x),y)
 # ---------- event detection / matching ----------
 def onset_candidates(y,min_sep,expected_period):
     hop=128
-    oe=au.librosa.onset.onset_strength(y=y,sr=SR,hop_length=hop,n_fft=2048,aggregate=np.mean)
+    oe=onsets.onset_strength(y,SR,hop_length=hop,n_fft=2048,aggregate=np.mean)
     oe=signal.savgol_filter(oe,9,2,mode='interp') if len(oe)>10 else oe
     dist=max(1,int(min_sep*SR/hop)); prom=max(np.percentile(oe,70)*.18,1e-8)
     pk,_=signal.find_peaks(oe,distance=dist,prominence=prom)
@@ -186,7 +193,7 @@ def detect_chrom(y):
         scores.append(np.nanmedian(vv) if vv else -999)
     st=float(phases[int(np.argmax(scores))]);events=[]
     # local onset refinement ±35 ms and f0 confirmation
-    oe=au.librosa.onset.onset_strength(y=y,sr=SR,hop_length=64,n_fft=1024);ot=np.arange(len(oe))*64/SR
+    oe=onsets.onset_strength(y,SR,hop_length=64,n_fft=1024);ot=np.arange(len(oe))*64/SR
     for k,(fr,fe) in enumerate(zip(CH_FRETS,CH_FREQ)):
         tg=st+k*.3;m=(ot>=tg-.035)&(ot<=tg+.035);t=float(ot[m][np.argmax(oe[m])]) if m.any() else tg
         f,_=f0_refine(y,t,.3,fe);events.append(dict(time=t,f0=f,level=db(amp_sine(y[int((t+.055)*SR):int(min(len(y),(t+.24)*SR))],f)),expected=fe,fret=fr,index=k))
@@ -218,24 +225,46 @@ def detect_and_match(key,p):
 
 # ---------- phase windows and spectral extraction ----------
 def phase_bounds(period):
+    """Nominal phase windows; `low` follows V4.1 (onset+60 ms → +760 ms)."""
     if period<.4:
-        return {'attack':(0,.045),'stabilization':(.045,.090),'body':(.09,.175),'sustain':(.175,.255),'decay':(.225,.285)}
-    return {'attack':(0,.075),'stabilization':(.075,.155),'body':(.155,.32),'sustain':(.32,.49),'decay':(.44,.56)}
+        bounds={
+            'attack':(0,.045),'stabilization':(.045,.090),'body':(.09,.175),
+            'sustain':(.175,.255),'decay':(.225,.285),
+            # Short notes: keep a longer low window when IOI allows; else extract falls back.
+            'low':(.060, min(.760, max(.240, period*.90))),
+        }
+        return bounds
+    return {
+        'attack':(0,.075),'stabilization':(.075,.155),'body':(.155,.32),
+        'sustain':(.32,.49),'decay':(.44,.56),'low':(.060,.760),
+    }
 
-def extract_seg(y,t,a,b,next_t=None):
+def extract_seg(y,t,a,b,next_t=None,min_duration=0.0):
     end=t+b
-    if next_t is not None:end=min(end,next_t-.012)
-    aa=int(max(0,(t+a)*SR));bb=int(min(len(y),end*SR));return y[aa:bb]
+    if next_t is not None:end=min(end,next_t-.050 if min_duration>0 else next_t-.012)
+    aa=int(max(0,(t+a)*SR));bb=int(min(len(y),end*SR))
+    seg=y[aa:bb]
+    if min_duration>0 and len(seg)<int(min_duration*SR):
+        return None  # caller may fall back to sustain
+    return seg
 
 def multitaper_psd(seg):
     seg=np.asarray(seg,float)
     if len(seg)<128:return None,None
-    seg=seg-np.mean(seg);n=len(seg);nfft=1<<int(np.ceil(np.log2(max(2048,n*4))))
+    # V4.1: linear detrend before windowing (kills slow drift / false sub-bass).
+    seg=signal.detrend(seg, type='linear')
+    n=len(seg);nfft=1<<int(np.ceil(np.log2(max(2048,n*4))))
     nfft=min(nfft,65536);tapers=signal.windows.dpss(n,2.5,Kmax=3,sym=False)
     P=[]
     for w in tapers:
         X=np.fft.rfft(seg*w,nfft);P.append(np.abs(X)**2/(np.sum(w*w)*SR+1e-30))
     return np.fft.rfftfreq(nfft,1/SR),np.mean(P,axis=0)
+
+def subtract_noise_floor(freqs, P, nfreqs, nP):
+    """Subtract pre-onset noise PSD (V4.1); floor at tiny fraction of signal."""
+    if P is None or nP is None or nfreqs is None: return P
+    floor=np.interp(freqs, nfreqs, nP, left=nP[0], right=nP[-1])
+    return np.maximum(P - floor, P * 1e-8)
 
 def local_tonal(P,freqs,ftarget):
     if P is None or ftarget<20 or ftarget>20000:return np.nan,np.nan,np.nan,np.nan
@@ -269,6 +298,7 @@ def noise_profile(y,events,period):
 
 def extract_pair(key,p,yc,ya,ec,ea,matches,period):
     rows=[];fund=[];match_rows=[];win_rows=[];attack_rows=[];gap_rows=[];traj=[]
+    # Pre-onset noise floors — now applied to phase PSDs (V21 / V4.1 bajos).
     nfc,npc,nrc=noise_profile(yc,ec,period);nfa,npa,nra=noise_profile(ya,ea,period)
     bounds=phase_bounds(period)
     band_centers=np.geomspace(40,16000,48)
@@ -280,23 +310,42 @@ def extract_pair(key,p,yc,ya,ec,ea,matches,period):
         if ic+1<len(ec):
             ioi=ec[ic+1]['time']-tc; gap_rows.append(dict(pair=key,event=mi,ioi_cafe_s=ioi,ioi_azul_s=(ea[ia+1]['time']-ta) if ia+1<len(ea) else np.nan,nominal_period_s=period,silence_cafe_s=max(0,ioi-period*.88),overlap_cafe_s=max(0,period*.88-ioi),classification='overlap' if ioi<period*.82 else 'clean'))
         phase_data={}
+        # Pre-extract sustain for low-window fallback (V4.1 min 180 ms).
+        sus_a,sus_b=bounds['sustain']
+        sc_sus=extract_seg(yc,tc,sus_a,sus_b,nc);sa_sus=extract_seg(ya,ta,sus_a,sus_b,na)
         for ph,(a,b) in bounds.items():
-            sc=extract_seg(yc,tc,a,b,nc);sa=extract_seg(ya,ta,a,b,na)
+            min_dur=0.180 if ph=='low' else 0.0
+            sc=extract_seg(yc,tc,a,b,nc,min_duration=min_dur)
+            sa=extract_seg(ya,ta,a,b,na,min_duration=min_dur)
+            used_fallback=False
+            if ph=='low' and (sc is None or sa is None):
+                sc=sc_sus;sa=sa_sus;used_fallback=True
+            if sc is None or sa is None or len(sc)<128 or len(sa)<128:
+                continue
             fpc,Pc=multitaper_psd(sc);fpa,Pa=multitaper_psd(sa)
+            Pc=subtract_noise_floor(fpc,Pc,nfc,npc);Pa=subtract_noise_floor(fpa,Pa,nfa,npa)
             phase_data[ph]=(sc,sa,fpc,Pc,fpa,Pa)
-            win_rows.append(dict(pair=key,event=mi,phase=ph,start_cafe=tc+a,end_cafe=min(tc+b,nc-.012 if nc else tc+b),start_azul=ta+a,end_azul=min(ta+b,na-.012 if na else ta+b),duration_cafe_ms=len(sc)/SR*1000,duration_azul_ms=len(sa)/SR*1000,cycles_cafe=(fc*len(sc)/SR) if np.isfinite(fc) else np.nan,cycles_azul=(fa*len(sa)/SR) if np.isfinite(fa) else np.nan,resolution_hz_cafe=SR/(max(2048,1<<int(np.ceil(np.log2(max(128,len(sc)*4)))))) if len(sc) else np.nan))
+            end_c=min(tc+b,nc-.050 if (nc and ph=='low') else (nc-.012 if nc else tc+b))
+            end_a=min(ta+b,na-.050 if (na and ph=='low') else (na-.012 if na else ta+b))
+            win_rows.append(dict(pair=key,event=mi,phase=ph,start_cafe=tc+a,end_cafe=end_c,start_azul=ta+a,end_azul=end_a,duration_cafe_ms=len(sc)/SR*1000,duration_azul_ms=len(sa)/SR*1000,cycles_cafe=(fc*len(sc)/SR) if np.isfinite(fc) else np.nan,cycles_azul=(fa*len(sa)/SR) if np.isfinite(fa) else np.nan,resolution_hz_cafe=SR/(max(2048,1<<int(np.ceil(np.log2(max(128,len(sc)*4)))))) if len(sc) else np.nan,low_fallback_sustain=int(used_fallback)))
+            # Peak PSD for relative-energy scores (V4.1 −58/−68/−82 dB floors).
+            max_pc=float(np.max(Pc)) if Pc is not None and len(Pc) else np.nan
+            max_pa=float(np.max(Pa)) if Pa is not None and len(Pa) else np.nan
             # fundamental absolute
             if np.isfinite(fgeom):
-                ac=amp_sine(sc,fc);aa=amp_sine(sa,fa);# local PSD SNR at actual f0
-                _,_,snc,_=local_tonal(Pc,fpc,fc);_,_,sna,_=local_tonal(Pa,fpa,fa)
+                ac=amp_sine(sc,fc);aa=amp_sine(sa,fa)
+                _,pc_f,snc,_=local_tonal(Pc,fpc,fc);_,pa_f,sna,_=local_tonal(Pa,fpa,fa)
                 dd=db(aa)-db(ac)
-                fund.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=fgeom,f0=fgeom,y=dd,snr=min(snc,sna),match_cost=cost,kind='fundamental',weight_base=PHASE_W[ph]))
+                rel=min(
+                    dbp(pc_f)-dbp(max_pc) if np.isfinite(pc_f) and np.isfinite(max_pc) else np.nan,
+                    dbp(pa_f)-dbp(max_pa) if np.isfinite(pa_f) and np.isfinite(max_pa) else np.nan,
+                )
+                fund.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=fgeom,f0=fgeom,y=dd,snr=min(snc,sna),rel_db=rel,match_cost=cost,kind='fundamental',weight_base=PHASE_W[ph]))
                 traj.append(dict(pair=key,event=mi,phase=ph,f0_cafe_hz=fc,f0_azul_hz=fa,amplitude_cafe=ac,amplitude_azul=aa,delta_db=dd,snr_cafe=snc,snr_azul=sna))
-                # harmonic relative observations, exclude open >300
+                # Open strings: allow harmonics through OPEN_SOFT_HZ; soft mask in v12.
                 if not (fam(key)=='open'):
                     maxk=min(48,int(16000/max(fgeom,1)))
-                else:maxk=min(12,int(300/max(fgeom,1)))
-                # fundamental powers for relative ratios
+                else:maxk=min(12,int(OPEN_SOFT_HZ/max(fgeom,1)))
                 _,pc0,snc0,_=local_tonal(Pc,fpc,fc);_,pa0,sna0,_=local_tonal(Pa,fpa,fa)
                 for k in range(2,maxk+1):
                     ftc=k*fc;fta=k*fa;ft=np.sqrt(ftc*fta)
@@ -304,30 +353,42 @@ def extract_pair(key,p,yc,ya,ec,ea,matches,period):
                     if not np.isfinite(pc) or min(snc,sna,snc0,sna0)<8:continue
                     yy=(dbp(pa_)-dbp(pa0))-(dbp(pc)-dbp(pc0))
                     common=min(dbp(pc),dbp(pa_));wenergy=np.clip(10**((common-max(dbp(pc0),dbp(pa0)))/20),.03,1)
-                    rows.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=float(ft),f0=fgeom,y=float(yy),snr=float(min(snc,sna)),match_cost=cost,kind='tonal_harmonic',weight_base=PHASE_W[ph]*wenergy,harmonic=k,frequency_cafe=fmc,frequency_azul=fma))
+                    rel_h=min(
+                        dbp(pc)-dbp(max_pc) if np.isfinite(max_pc) else np.nan,
+                        dbp(pa_)-dbp(max_pa) if np.isfinite(max_pa) else np.nan,
+                    )
+                    rows.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=float(ft),f0=fgeom,y=float(yy),snr=float(min(snc,sna)),rel_db=rel_h,match_cost=cost,kind='tonal_harmonic',weight_base=PHASE_W[ph]*wenergy,harmonic=k,frequency_cafe=fmc,frequency_azul=fma))
         # attack multiscale and band residual relative to body f0 delta
         if np.isfinite(fgeom):
             body=[z for z in fund if z['pair']==key and z['event']==mi and z['phase']=='body']
             d0=body[-1]['y'] if body else np.nan
             for lo_ms,hi_ms in [(0,5),(5,10),(10,20),(20,40),(40,80),(80,160)]:
                 sc=extract_seg(yc,tc,lo_ms/1000,hi_ms/1000,nc);sa=extract_seg(ya,ta,lo_ms/1000,hi_ms/1000,na)
+                if sc is None or sa is None: continue
                 fpc,Pc=multitaper_psd(sc);fpa,Pa=multitaper_psd(sa)
+                Pc=subtract_noise_floor(fpc,Pc,nfc,npc);Pa=subtract_noise_floor(fpa,Pa,nfa,npa)
                 for bl,bh,bn in [(20,60,'20-60'),(60,150,'60-150'),(150,500,'150-500'),(500,2000,'500-2000'),(2000,5000,'2000-5000'),(5000,10000,'5000-10000')]:
                     if Pc is None:continue
                     mc=(fpc>=bl)&(fpc<bh);ma=(fpa>=bl)&(fpa<bh)
                     if mc.sum()<2 or ma.sum()<2:continue
                     ecv=np.trapz(Pc[mc],fpc[mc]);eav=np.trapz(Pa[ma],fpa[ma]);dd=dbp(eav)-dbp(ecv)
                     attack_rows.append(dict(pair=key,event=mi,window=f'{lo_ms}-{hi_ms}ms',band=bn,delta_db=dd,match_cost=cost))
-            # band observations by phases, low weight, strict SNR
-            for ph in ['attack','stabilization','body','sustain']:
+            # band observations by phases (incl. low); open soft-stop at OPEN_SOFT_HZ
+            for ph in ['attack','stabilization','body','sustain','low']:
+                if ph not in phase_data: continue
                 sc,sa,fpc,Pc,fpa,Pa=phase_data[ph]
+                max_pc=float(np.max(Pc)) if Pc is not None and len(Pc) else np.nan
+                max_pa=float(np.max(Pa)) if Pa is not None and len(Pa) else np.nan
                 for bc in band_centers:
-                    if fam(key)=='open' and bc>300:continue
+                    if fam(key)=='open' and bc>OPEN_SOFT_HZ:continue
                     pc,snc=band_power(Pc,fpc,bc);pa_,sna=band_power(Pa,fpa,bc)
                     if min(snc,sna)<14 or not np.isfinite(d0):continue
                     yy=(dbp(pa_)-dbp(pc))-d0
-                    # only residual/transient observation; lower confidence
-                    rows.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=float(bc),f0=fgeom,y=float(yy),snr=float(min(snc,sna)),match_cost=cost,kind='band_residual',weight_base=PHASE_W[ph]*.10,harmonic=np.nan,frequency_cafe=bc,frequency_azul=bc))
+                    rel_b=min(
+                        dbp(pc)-dbp(max_pc) if np.isfinite(max_pc) else np.nan,
+                        dbp(pa_)-dbp(max_pa) if np.isfinite(max_pa) else np.nan,
+                    )
+                    rows.append(dict(pair=key,family=fam(key),string=string_of(key),register=register_of(fgeom),event=mi,phase=ph,f=float(bc),f0=fgeom,y=float(yy),snr=float(min(snc,sna)),rel_db=rel_b,match_cost=cost,kind='band_residual',weight_base=PHASE_W[ph]*.10,harmonic=np.nan,frequency_cafe=bc,frequency_azul=bc))
     return rows,fund,match_rows,win_rows,attack_rows,gap_rows,traj
 
 # ---------- model ----------
@@ -416,9 +477,16 @@ def eval_q(beta,f=DENSE_F):
 def predict_rows(beta,df,model='JOINT'):
     X=np.vstack([design(r,model) for r in df.to_dict('records')]);return X@beta
 
-CANDS=[(20,5,20,.7),(50,10,40,1),(100,20,80,1),(200,40,150,1.2),(400,80,300,1.5),(80,8,20,.7),(160,15,50,1),(300,30,100,1.3)]
+_LC,_LR,_CANDS_CFG=run_config.lambdas()
+CANDS=_CANDS_CFG or [(20,5,20,.7),(50,10,40,1),(100,20,80,1),(200,40,150,1.2),(400,80,300,1.5),(80,8,20,.7),(160,15,50,1),(300,30,100,1.3)]
 
 def cross_validate(obs):
+    """Score every lambda candidate; honour a fixed selection when configured.
+
+    The candidates' central_score differ by <0.08, so picking the argmin is not
+    reproducible across runs. `lambda_mode: fixed` keeps the CV table for
+    auditing but returns the configured value.
+    """
     pairs=sorted(set(o['pair'] for o in obs));rows=[]
     for ci,c in enumerate(CANDS):
         for hold in pairs:
@@ -433,8 +501,14 @@ def cross_validate(obs):
     ag['central_score']=ag.mae+.25*ag.rmse+.15*ag.sub_mae.fillna(0)
     ag['robust_score']=.45*ag.p90+.45*ag.p95+.10*ag.sub_mae.fillna(0)
     ic=int(ag.loc[ag.central_score.idxmin(),'candidate']);ir=int(ag.loc[ag.robust_score.idxmin(),'candidate'])
-    ag['selected_central']=ag.candidate==ic;ag['selected_robust']=ag.candidate==ir;ag.to_csv(OUT/'SELECCION_MODELOS_V10_2.csv',index=False)
-    return CANDS[ic],CANDS[ir],cv,ag
+    ag['cv_argmin_central']=ag.candidate==ic;ag['cv_argmin_robust']=ag.candidate==ir
+    lc=_LC if _LC is not None else CANDS[ic]
+    lr=_LR if _LR is not None else CANDS[ir]
+    ag['selected_central']=[tuple(c)==tuple(lc) for c in CANDS]
+    ag['selected_robust']=[tuple(c)==tuple(lr) for c in CANDS]
+    ag['lambda_mode']='fixed' if _LC is not None else 'cv'
+    ag.to_csv(OUT/'SELECCION_MODELOS_V10_2.csv',index=False)
+    return lc,lr,cv,ag
 
 # fixed old curves with nuisance refit using synthetic Q values
 def load_old_curve(kind):
@@ -643,6 +717,10 @@ def report_files(curve_df,beta_c,beta_r,central,robust,safe,param,no_sub,no_high
 # ---------- main ----------
 def main():
     t=time.time();all_obs=[];all_fund=[];matches=[];wins=[];att=[];gaps=[];traj=[];inventory=[]
+    run_id=os.environ.get('AZUL_RUN_ID') or time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+    manifest=run_manifest.build(run_id,pipeline='emulate_azul',stages=['build_v10_2'])
+    run_manifest.write(manifest)
+    print('0/9 run_id',run_id,'config_hash',manifest['config_hash'][:16],flush=True)
     print('1/9 detect/match/extract originals',flush=True)
     for ii,(key,p) in enumerate(PAIRS.items(),1):
         yc,ya,ec,ea,ma,period=detect_and_match(key,p)
@@ -712,11 +790,12 @@ def main():
     report_files(curve,bc,br,central,robust,safe,param,no_sub,no_high,cvagg,metrics,local,pd.DataFrame(matches),sig,ident,cut,centers,Qs,gains,pd.DataFrame(inventory))
     # configs/hash/log
     pd.DataFrame([dict(file=p.name,sha256=sha256(p),bytes=p.stat().st_size) for p in sorted(AUDIO.glob('*.m4a'))]).to_csv(OUT/'HASHES_WAV_ORIGINALES.csv',index=False)
-    (OUT/'CONFIG_V10_2.json').write_text(json.dumps({'seed':SEED,'sr':SR,'dense_points':4096,'low_points':512,'candidates':CANDS,'selected_central':lc,'selected_robust':lr,'open_above_300_weight':0,'methods':['monotonic DP matching','F0 sub-bin','DPSS multitaper','sinusoidal regression','relative harmonics','adaptive phase windows','robust hierarchical fit']},indent=2),encoding='utf-8')
+    (OUT/'CONFIG_V10_2.json').write_text(json.dumps({'seed':SEED,'sr':SR,'dense_points':4096,'low_points':512,'candidates':CANDS,'selected_central':lc,'selected_robust':lr,'open_above_300_weight':0,'methods':['monotonic DP matching','F0 sub-bin','DPSS multitaper','linear detrend','pre-onset noise subtract','low window 60-760ms','relative energy rel_db','relative harmonics','adaptive phase windows','robust hierarchical fit'],'pipeline_note':'V21 low+high audit extract'},indent=2),encoding='utf-8')
     print('7/9 render audio',flush=True)
     render_all([central,robust,safe,param,no_sub,no_high],bc,pd.DataFrame(matches))
     print('8/9 package',flush=True)
-    (CODE/'README.md').write_text('# V10.2 pipeline\n\nRun `python build_v10_2.py` from `modules/emulate_azul/code`. Inputs are normalized M4A under `audio/cafe_vs_azul` (decoded to `_cache/wav`). V9/V10.1 optional curves live in `legacy_curves/`.\n',encoding='utf-8');(CODE/'requirements.txt').write_text('numpy\npandas\nscipy\nsoundfile\nlibrosa\nmatplotlib\n',encoding='utf-8')
+    # NOTE: this used to rewrite code/requirements.txt on every run, silently
+    # dropping the pinned versions the run actually used.
     prompt=ROOT/'docs'/'PROMPT_MAESTRO_V10_2.md'
     if prompt.exists() and not (CODE/'PROMPT_MAESTRO_V10_2.md').exists():
         shutil.copy2(prompt,CODE/'PROMPT_MAESTRO_V10_2.md')
@@ -731,6 +810,9 @@ def main():
             for r in roots:
                 for p in r.rglob('*'):
                     if p.is_file():z.write(p,arcname=str(p.relative_to(ROOT)))
-    print('9/9 done',json.dumps({'elapsed_s':time.time()-t,'observations':len(obs),'matches':len(matches),'gain':bc[IG],'central':lc,'robust':lr,'files':len(inv)},indent=2),flush=True)
+    manifest.update(elapsed_s=time.time()-t,n_observations=len(obs),n_matches=len(matches),
+                    lambda_central=list(lc),lambda_robust=list(lr),model_intercept_db=float(bc[IG]))
+    run_manifest.finalize(manifest)
+    print('9/9 done',json.dumps({'run_id':run_id,'elapsed_s':time.time()-t,'observations':len(obs),'matches':len(matches),'gain':bc[IG],'central':lc,'robust':lr,'files':len(inv)},indent=2),flush=True)
 
 if __name__=='__main__':main()

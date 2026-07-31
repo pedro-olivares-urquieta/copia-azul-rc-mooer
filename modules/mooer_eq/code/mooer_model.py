@@ -11,10 +11,17 @@ import numpy as np
 class MooerModel:
     frequencies_hz: tuple[float, ...] = (30.0, 148.0, 735.0, 3637.0, 18000.0)
     q_display: float = 0.3
+    # Global gain is additive 1:1 in dB (not scaled by gain_coeff).
     global_gain_db: float = 3.0
+    global_gain_min_db: float = -60.0
+    global_gain_max_db: float = 3.0
+    global_gain_step_db: float = 0.5
+    # Per-band display gains.
     gain_min_db: float = -16.0
     gain_max_db: float = 16.0
     gain_step_db: float = 0.5
+    # Display→effective for band gains only. Provenance:
+    # modules/mooer_eq/data/CALIBRATION_PROVENANCE.json
     gain_coeff: float = 0.75
     q_base: float = 0.569
     q_gain_slope: float = -0.0026
@@ -39,6 +46,19 @@ def q_effective(gain_display_db: float | np.ndarray, model: MooerModel = DEFAULT
     return model.q_display * (model.q_base + model.q_gain_slope * g)
 
 
+def global_gain_grid(model: MooerModel = DEFAULT_MODEL) -> np.ndarray:
+    """Hardware global gain range (−60…+3 dB), 1:1 with response dB."""
+    return np.arange(
+        model.global_gain_min_db,
+        model.global_gain_max_db + 1e-9,
+        model.global_gain_step_db,
+    )
+
+
+def clip_global_gain(gain_db: float, model: MooerModel = DEFAULT_MODEL) -> float:
+    return float(np.clip(gain_db, model.global_gain_min_db, model.global_gain_max_db))
+
+
 def bell_db(
     freq_hz: np.ndarray,
     center_hz: float,
@@ -59,13 +79,15 @@ def preset_response_db(
     freq_hz: np.ndarray,
     gains_display_db: Sequence[float],
     model: MooerModel = DEFAULT_MODEL,
+    global_gain_db: float | None = None,
 ) -> np.ndarray:
     gains = list(gains_display_db)
     if len(gains) != len(model.frequencies_hz):
         raise ValueError(
             f"Expected {len(model.frequencies_hz)} gains, got {len(gains)}"
         )
-    y = np.full_like(np.asarray(freq_hz, dtype=float), model.global_gain_db)
+    g0 = model.global_gain_db if global_gain_db is None else clip_global_gain(global_gain_db, model)
+    y = np.full_like(np.asarray(freq_hz, dtype=float), g0)
     for fc, g in zip(model.frequencies_hz, gains):
         y = y + bell_db(freq_hz, fc, g, model)
     return y
@@ -84,7 +106,7 @@ def regional_rmse(
         if uncertainty_db is not None
         else np.full_like(f, 0.12)
     )
-    out = {}
+    out: dict[str, float] = {}
     region_rmses = []
     for name, lo, hi in REGIONS:
         m = (f >= lo) & (f < (hi if hi < 15500 else hi + 1))

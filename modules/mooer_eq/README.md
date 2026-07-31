@@ -7,9 +7,9 @@ Objetivo: modelar en PC el EQ del **Mooer GE300** y optimizar presets que copien
 - 5 campanas fijas: **30 / 148 / 735 / 3637 / 18000 Hz**
 - Q mostrado fijo: **0.3**
 - Gain display: **-16…+16 dB**, paso **0.5 dB**
-- Global: **+3 dB**
-- Calibración aproximada:
-  - `gain_eff = 0.75 * gain_display`
+- Global: rango hardware **−60…+3 dB**, mapeo **1:1** (presets operativos siguen bloqueados en **+3 dB**)
+- Calibración (hasheada en `data/CALIBRATION_PROVENANCE.json`):
+  - `gain_eff = 0.75 * gain_display` (solo bandas)
   - `Q_eff = 0.3 * (0.569 - 0.0026 * gain_display)`
 
 ## Dependencia

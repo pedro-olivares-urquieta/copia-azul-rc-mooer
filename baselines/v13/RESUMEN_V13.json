@@ -1,0 +1,45 @@
+{
+  "run_id": "v13_20260731T072738Z",
+  "reference_gain_db": -12.038460338023926,
+  "phase_curves": "CURVAS_POR_FASE_V13.csv",
+  "named_curves": [
+    "CURVA_ATAQUE_V13.csv",
+    "CURVA_SUSTAIN_V13.csv",
+    "CURVA_CUERPO_V13.csv",
+    "CURVA_ATAQUE_MENOS_CUERPO_V13.csv",
+    "CURVA_SUSTAIN_MENOS_CUERPO_V13.csv",
+    "CURVA_ATAQUE_MULTIESCALA_V13.csv"
+  ],
+  "gain_recommended_db": -12.012168496718497,
+  "gain_ci95_db": [
+    -13.339562643660509,
+    -10.717975786770907
+  ],
+  "audio_rms_median_db": -12.136214935220323,
+  "headroom_azul_min_db": 31.17417100186513,
+  "loro_worst_register": {
+    "held_out_register": "low",
+    "n_observations": 4821,
+    "n_pairs": 8,
+    "mae_db": 6.490476993214658,
+    "rmse_db": 8.02574147174677,
+    "p95_db": 15.770996364125605
+  },
+  "lopo_worst_pair": {
+    "held_out_pair": "B_open",
+    "held_out_family": "open",
+    "n_observations": 3574,
+    "mae_db": 5.734996268452305,
+    "rmse_db": 7.407579943365046,
+    "p95_db": 14.837481662419192
+  },
+  "loeo_worst_exercise": {
+    "held_out_exercise": "fret12",
+    "n_observations": 8658,
+    "n_pairs": 6,
+    "mae_db": 4.877533022917243,
+    "rmse_db": 6.561868338157585,
+    "p95_db": 14.324955710083216
+  },
+  "elapsed_s": 45.58754229545593
+}

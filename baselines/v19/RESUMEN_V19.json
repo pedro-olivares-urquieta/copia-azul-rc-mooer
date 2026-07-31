@@ -1,0 +1,10 @@
+{
+  "run_id": "v19_20260731T085750Z",
+  "winner": "v19_presence_robust",
+  "gain_db": -12.011933081005811,
+  "presence_scale": 0.32,
+  "holdout_rmse_db": 4.100028878623228,
+  "bias_2k4k_db": 0.055666132494328835,
+  "beat_v17": true,
+  "elapsed_s": 66.28585004806519
+}

@@ -165,7 +165,9 @@ def _seed_lsq(
     for k, b in enumerate(free_bands):
         fc = model.frequencies_hz[b]
         i = int(np.argmin(np.abs(freq - fc)))
-        x0[k] = np.clip((target[i] - model.global_gain_db) / 0.75, -16, 16)
+        x0[k] = np.clip(
+            (target[i] - model.global_gain_db) / model.gain_coeff, -16, 16
+        )
 
     bounds = ([-16.0] * len(free_bands), [16.0] * len(free_bands))
     res = least_squares(residual, x0, bounds=bounds, max_nfev=400, ftol=1e-10)

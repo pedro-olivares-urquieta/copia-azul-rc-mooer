@@ -1,0 +1,39 @@
+{
+  "version": "V16.0-faithful",
+  "smoothing": "none",
+  "operative_curve_csv": "CURVA_COPIA_OPERATIVA.csv",
+  "operative_column": "eq_copy_db",
+  "operative_source": "CURVAS_DENSAS_V15_FIEL.csv::eq_faithful_db",
+  "operative_variant": "v15_faithful",
+  "gain_db": -11.78741360814496,
+  "v16_curve_csv": "CURVAS_DENSAS_V16_FIEL.csv",
+  "v16_gain_db": -12.071697270829388,
+  "gain_residual_after_eq_db": -12.844700361418926,
+  "gain_ci95_db": [
+    -14.63696979267629,
+    -9.576389068295555
+  ],
+  "presence_scale": 0.37,
+  "band_scales": [
+    {
+      "low_hz": 500.0,
+      "high_hz": 20000.0,
+      "scale": 0.37,
+      "mode": "single_presence"
+    }
+  ],
+  "per_pair_scalar": "GAIN_ESCALAR_POR_PAREJA_V16.csv",
+  "holdout_pairs": [
+    "B_12",
+    "D_12",
+    "G_12",
+    "C_24"
+  ],
+  "calib_pairs": [
+    "A_12",
+    "C_12",
+    "E_12",
+    "C_chromatic"
+  ],
+  "intent": "Copy Azul faithfully from existing 16-pair evidence without octave smoothing."
+}

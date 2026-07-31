@@ -1,11 +1,19 @@
 {
-  "pdf": "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf",
-  "presets_json": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json",
-  "formula": "target = azul_central + azul_gain + rc_setup",
+  "pdf": "INFORME_ORQUESTADOR_AZUL_RC_MOOER_V22.pdf",
+  "presets_json": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_V22_LOCKED18K.json",
+  "presets_json_paths": {
+    "v22": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_V22_LOCKED18K.json",
+    "canonical": "/workspace/modules/unified/data/ORCHESTRATED_PRESETS_AZUL_PLUS_RC_LOCKED18K.json",
+    "mooer_v22": "/workspace/modules/mooer_eq/data/PRESETS_ORQUESTADOR_AZUL_PLUS_RC_V22_LOCKED18K.json",
+    "mooer_canonical": "/workspace/modules/mooer_eq/data/PRESETS_ORQUESTADOR_AZUL_PLUS_RC_LOCKED18K.json"
+  },
+  "formula": "target = azul_faithful + azul_gain + rc_setup",
+  "azul_variant": "faithful",
   "azul": {
-    "gain_recommended_db": -10.5914945497307,
-    "curve_min_db": -2.7339936176254525,
-    "curve_max_db": 4.120077679566832
+    "gain_recommended_db": -12.938934507503346,
+    "azul_variant": "faithful",
+    "curve_min_db": -3.332788560484933,
+    "curve_max_db": 5.718869704339619
   },
   "rc": {
     "bass": {
@@ -28,44 +36,86 @@
     "Bajo": {
       "display_name": "Azul+RC Bajo",
       "gains_display_db": [
-        6.5,
-        -4.0,
-        -10.5,
-        15.5,
+        -4.5,
+        4.5,
+        -12.0,
+        11.0,
         -16.0
       ],
-      "score": 1.929953667132498,
-      "worst": 1.3687079845314032,
-      "global": 1.096250612102332,
-      "azul_gain_db": -10.5914945497307
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "q_effective": [
+        0.17421,
+        0.16718999999999998,
+        0.18005999999999997,
+        0.16212,
+        0.18317999999999998
+      ],
+      "score": 2.2418467213415556,
+      "worst": 1.551153118791687,
+      "global": 1.3853252988262368,
+      "azul_gain_db": -12.938934507503346
     },
     "Híbrido": {
       "display_name": "Azul+RC Híbrido",
       "gains_display_db": [
-        -13.5,
-        0.5,
-        -10.5,
-        15.5,
+        -16.0,
+        -1.5,
+        -2.5,
+        5.5,
         -16.0
       ],
-      "score": 1.9580785903577884,
-      "worst": 1.4429675383553233,
-      "global": 1.0935687404585708,
-      "azul_gain_db": -10.5914945497307
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "q_effective": [
+        0.18317999999999998,
+        0.17187,
+        0.17264999999999997,
+        0.16640999999999997,
+        0.18317999999999998
+      ],
+      "score": 2.957645793571454,
+      "worst": 2.0281413168170217,
+      "global": 1.8205264089176791,
+      "azul_gain_db": -12.938934507503346
     },
     "Guitarra": {
       "display_name": "Azul+RC Guitarra",
       "gains_display_db": [
         -16.0,
-        -5.5,
-        -4.0,
-        12.0,
+        -12.5,
+        7.0,
+        1.5,
         -16.0
       ],
-      "score": 1.9572012876441482,
-      "worst": 1.4179375929202314,
-      "global": 1.090738395921534,
-      "azul_gain_db": -10.5914945497307
+      "q_display": [
+        0.3,
+        0.3,
+        0.3,
+        0.3,
+        0.3
+      ],
+      "q_effective": [
+        0.18317999999999998,
+        0.18044999999999997,
+        0.16523999999999997,
+        0.16953,
+        0.18317999999999998
+      ],
+      "score": 3.983649337021699,
+      "worst": 2.728114408662352,
+      "global": 2.3144051517255377,
+      "azul_gain_db": -12.938934507503346
     }
   },
   "constraints": {

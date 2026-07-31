@@ -1,0 +1,6 @@
+{
+  "version": "V21.0",
+  "intent": "Apply low+high audit fixes; faithful copy without smooth/shrink",
+  "operative_curve_csv": "CURVA_COPIA_OPERATIVA.csv",
+  "pipeline_version": "V21.0-operative"
+}

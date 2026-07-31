@@ -1,0 +1,8 @@
+{
+  "version": "V20.0",
+  "operative_curve_csv": "CURVA_COPIA_OPERATIVA.csv",
+  "air_policy": "v20_hard_10k",
+  "base": "v19_presence_robust",
+  "gain_db": -12.011933081005813,
+  "intent": "Keep faithful presence; treat 10–18 kHz as diagnostic air like V4.1 without smoothing mids."
+}

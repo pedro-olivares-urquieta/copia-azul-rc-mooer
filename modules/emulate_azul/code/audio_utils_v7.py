@@ -21,6 +21,35 @@ except ImportError:  # optional until analysis dependencies are installed
 
 SR = 44100
 
+# Standard 6-string bass tuning (B0 E1 A1 D2 G2 C3), equal temperament A4=440.
+OPEN_STRING_HZ = {
+    "b": 30.87,
+    "e": 41.20,
+    "a": 55.00,
+    "d": 73.42,
+    "g": 98.00,
+    "c": 130.81,
+}
+
+# build_v10_2.detect_mono needs the expected fundamental to refine F0 (±3.5 %).
+_POSITION_SEMITONES = {"open": 0, "fret_12": 12, "fret_24": 24}
+
+
+def expected_f0(kind: str, label: str, position: str) -> float | None:
+    """Expected fundamental in Hz for a pair, or None when undefined (chords)."""
+    base = OPEN_STRING_HZ.get(str(label).lower())
+    if base is None:
+        return None
+    if kind == "note":
+        semitones = _POSITION_SEMITONES.get(position)
+        if semitones is None:
+            return None
+        return base * 2.0 ** (semitones / 12.0)
+    if kind == "chromatic":
+        # Fallback reference only; chromatic events carry their own expected Hz.
+        return base
+    return None
+
 
 def _pair_key(kind: str, label: str, position: str) -> str:
     if kind == "note":
@@ -65,6 +94,9 @@ def load_pairs(
                     "cafe": str(cafe),
                     "azul": str(azul),
                     "pair_id": r["pair_id"],
+                    "f0": expected_f0(r["kind"], r["label"], r["position"]),
+                    "label": r["label"],
+                    "position": r["position"],
                 }
             )
     rows.sort(key=lambda p: p["key"])
