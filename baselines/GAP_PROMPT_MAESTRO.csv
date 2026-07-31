@@ -30,3 +30,7 @@ V17,Copia fiel hold-out + bias 2-4 kHz,DONE,True,v17_v15w_weighted_all operativa
 §24,Demean escalar por pareja,PARTIAL,True,V16/V17 dm_* empeora fidelidad con estas sesiones; diagnóstico
 §31,Pesos pareja por alineación,DONE,True,PESOS_PAREJA_ALINEACION_V17 + mediana ponderada
 §29.1,Repetibilidad fase como peso,DONE,True,phase_repeatability_weights en improve_v17
+V18,Phase-first+event conf+residual race,DONE,True,improve_v18; no bate V17 hold-out; operativa sigue V17
+§26,Confianza evento enriquecida,DONE,False,PESOS_EVENTO_V18; empeora fidelidad vs match_cost simple
+§27-29,Mezcla phase-first PAIR,DONE,False,v18_pf_*; bias mejor a veces pero RMSE hold peor
+BandScale,Escalas locales 1-2k/2-4k nested,DONE,True,FIDELIDAD_BANDSCALE_NESTED_V18; no promover (bias)

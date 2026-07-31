@@ -152,6 +152,22 @@ AZUL_RENDERS_DIR=modules/emulate_azul/_runs/det_A/renders \
 python3 modules/emulate_azul/code/improve_v17.py
 ```
 
+## 7b. V18 — más V4.1, misma evidencia, sin ganar la copia
+
+Se implementó lo que aún faltaba del informe **sin** suavizar ni `EQ×reliability`:
+
+| §§ | Cambio | Hold-out vs V17 |
+|---|---|---|
+| 27–29 | Phase-first PAIR + mezcla §29 | peor (~4.8 dB) |
+| 26 | Event conf note/lag/overlap | peor (~4.57) |
+| 13–16 | Carrera residual 0.05–0.35 | no gana |
+| 43–45 | Gain residual / grid | no gana |
+| — | Híbrido V17×phase-first | peor |
+| — | Band-scale 1–2/2–4 kHz nested | RMSE≈igual, bias peor |
+
+**Operativa permanece V17.** V18 queda como paquete diagnóstico (`baselines/v18/`, `improve_v18.py`).  
+Siguiente salto real (acuerdo §53): más evidencia (WAV/DI), no más agregadores sobre 16 AAC.
+
 ## 8. Cómo reproducir V14 (diagnóstico)
 
 ```bash
