@@ -43,13 +43,33 @@ La métrica de verdad es el **error espectral Café+EQ+gain vs Azul** en bandas 
 - `presence_scale` escala la EQ sobre 500 Hz **sin cambiar la forma** (no es un kernel de octavas).
 - Gain fiel ≈ −11.7…−12.1 dB (sigue alineado con V4.1 / audio / V12).
 
-Audios de prueba: `modules/emulate_azul/_runs/<run>/renders/FIDELIDAD_V15/`  
-(`ESTEREO_L_V15_FIEL_R_AZUL.flac`).
+### V16 (refino con la misma evidencia)
+
+| Aporte V4.1 / propio | Efecto |
+|---|---|
+| Gain escalar **por pareja** (§24) antes de la forma | Evita que el nivel de una toma se cuele en la EQ |
+| Escala de presencia calibrada solo en `CALIB_PAIRS` | Hold-out real en `HOLD_PAIRS` |
+| Bootstrap CI de la curva detalle (sin smooth) | Incertidumbre explícita (anchura mediana ~11 dB → presencia frágil) |
+| `CURVA_COPIA_OPERATIVA.csv` | Elige automáticamente el ganador hold-out |
+
+Hold-out crítico (0.5–8 kHz), última corrida:
+
+| Variante | RMSE |
+|---|---:|
+| **v15_faithful (operativa)** | **~4.09** |
+| v16_faithful | ~4.19 |
+| v12_energy_neutral | ~5.43 |
+| v16_detail (sin escala) | ~5.66 |
+
+V15 sigue siendo la copia operativa; V16 aporta el protocolo honesto y el demean por pareja. En 2630 Hz, V16 detalle→escala cae cerca de V4.1 (+6.9 vs +6.6 dB) sin suavizado regional.
+
+Audios: `renders/FIDELIDAD_V16/ESTEREO_L_COPIA_OPERATIVA_R_AZUL.flac`
 
 ## Reproducir
 
 ```bash
 AZUL_OUT_DIR=modules/emulate_azul/_runs/det_A/results \
 AZUL_RENDERS_DIR=modules/emulate_azul/_runs/det_A/renders \
-python3 modules/emulate_azul/code/improve_v15.py
+python3 modules/emulate_azul/code/improve_v15.py && \
+python3 modules/emulate_azul/code/improve_v16.py
 ```

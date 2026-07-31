@@ -1,0 +1,102 @@
+{
+  "run_id": "v16_20260731T075513Z",
+  "intent": "faithful_copy_without_smoothing",
+  "primary": "CURVAS_DENSAS_V16_FIEL.csv::eq_faithful_db",
+  "gain_faithful_db": -12.071697270829388,
+  "gain_detail_db": -11.919998890453362,
+  "gain_residual_db": -12.844700361418926,
+  "median_pair_scalar_db": -12.136214935220323,
+  "presence_scale": 0.37,
+  "band_scales": [
+    {
+      "low_hz": 500.0,
+      "high_hz": 20000.0,
+      "scale": 0.37,
+      "mode": "single_presence"
+    }
+  ],
+  "holdout_ranking": [
+    {
+      "variant": "v15_faithful",
+      "holdout_critical_rmse_db": 4.087686821608004
+    },
+    {
+      "variant": "v16_faithful",
+      "holdout_critical_rmse_db": 4.189958593317364
+    },
+    {
+      "variant": "v12_energy_neutral",
+      "holdout_critical_rmse_db": 5.425043134192473
+    },
+    {
+      "variant": "v16_detail",
+      "holdout_critical_rmse_db": 5.655339488678459
+    }
+  ],
+  "best_holdout": {
+    "variant": "v15_faithful",
+    "holdout_critical_rmse_db": 4.087686821608004
+  },
+  "median_ci_width_db": 11.53254973770927,
+  "checkpoints": [
+    {
+      "frequency_hz": 98,
+      "v16_detail_db": -1.364401476563473,
+      "v16_faithful_db": -1.2127030961874476,
+      "v15_faithful_db": -1.3631919874657306,
+      "v12_db": -0.20801309160011805,
+      "v41_db": -0.76
+    },
+    {
+      "frequency_hz": 515,
+      "v16_detail_db": 3.5119988002172775,
+      "v16_faithful_db": 1.451137936456418,
+      "v15_faithful_db": 1.82433574723414,
+      "v12_db": 0.04203383914881,
+      "v41_db": 3.49
+    },
+    {
+      "frequency_hz": 958,
+      "v16_detail_db": 4.259973214691675,
+      "v16_faithful_db": 1.727888469811945,
+      "v15_faithful_db": 1.8542433145090682,
+      "v12_db": 2.082997365274984,
+      "v41_db": 3.49
+    },
+    {
+      "frequency_hz": 1360,
+      "v16_detail_db": 7.302500897749764,
+      "v16_faithful_db": 2.853623712543438,
+      "v15_faithful_db": 2.5224585786710634,
+      "v12_db": 3.5456606419564314,
+      "v41_db": 4.08
+    },
+    {
+      "frequency_hz": 2630,
+      "v16_detail_db": 18.326798918690308,
+      "v16_faithful_db": 6.93261398029144,
+      "v15_faithful_db": 4.804518294027001,
+      "v12_db": 2.327469442125705,
+      "v41_db": 6.61
+    },
+    {
+      "frequency_hz": 4120,
+      "v16_detail_db": 9.179345328028681,
+      "v16_faithful_db": 3.5480561517466374,
+      "v15_faithful_db": 3.3624712493805373,
+      "v12_db": 1.4169764014222397,
+      "v41_db": 6.34
+    },
+    {
+      "frequency_hz": 5190,
+      "v16_detail_db": 13.760125136486264,
+      "v16_faithful_db": 5.242944680875943,
+      "v15_faithful_db": 4.062767430960281,
+      "v12_db": 1.0831689323148908,
+      "v41_db": 4.33
+    }
+  ],
+  "recommended_for_copy": "v15_faithful",
+  "note": "No octave smoothing. Per-pair RMS scalar removed before shape. Single presence scale calibrated on CALIB_PAIRS; fidelity ranked on HOLD_PAIRS. If hold-out prefers v15_faithful, keep that as operational copy.",
+  "elapsed_s": 19.771960258483887
+}
