@@ -167,6 +167,7 @@ def phase_first_pair_curve(obs: pd.DataFrame, pair: str) -> tuple[np.ndarray, np
         "sustain": g[g.phase == "sustain"],
         "stabilization": g[g.phase == "stabilization"],
         "decay": g[g.phase == "decay"],
+        "low": g[g.phase == "low"],
     }
     curves = {}
     for name, gg in phases.items():
@@ -177,22 +178,25 @@ def phase_first_pair_curve(obs: pd.DataFrame, pair: str) -> tuple[np.ndarray, np
                 gg.f, gg.y_timbre, gg.w, v14.PAIR_F, LOCAL_OCT
             )
 
-    # Nominal phase mix on PAIR_F.
+    # Nominal phase mix on PAIR_F (V21: optional 6th weight = low).
     mix_w = {k: np.zeros(len(v14.PAIR_F)) for k in curves}
-    for lo, hi, att, stab, body, sus, decay in v14.PHASE_MIX:
+    for lo, hi, *weights in v14.PHASE_MIX:
         sel = (v14.PAIR_F >= lo) & (v14.PAIR_F < hi)
-        vals = np.array([att, stab, body, sus, decay], float)
+        vals = np.asarray(weights, float)
+        if len(vals) < 6:
+            vals = np.r_[vals, 0.0]
         vals = vals / max(vals.sum(), 1e-12)
         mix_w["attack"][sel] = vals[0]
         mix_w["stabilization"][sel] = vals[1]
         mix_w["body"][sel] = vals[2]
         mix_w["sustain"][sel] = vals[3]
         mix_w["decay"][sel] = vals[4]
+        mix_w["low"][sel] = vals[5]
 
     # Availability: zero weight where curve NaN.
     stacked = []
     weights = []
-    for name in ("attack", "stabilization", "body", "sustain", "decay"):
+    for name in ("attack", "stabilization", "body", "sustain", "decay", "low"):
         c = curves[name]
         w = mix_w[name].copy()
         w[~np.isfinite(c)] = 0.0

@@ -62,7 +62,7 @@ class AzulTransferCurve:
 
 
 def resolve_results_dir(results_dir: Path | None = None) -> Path:
-    """Prefer explicit/env OUT; fall back to det_A when it holds the operative copy."""
+    """Prefer explicit/env OUT; else newest `_runs/*/results` with operative curve."""
     import os
 
     if results_dir is not None:
@@ -71,6 +71,15 @@ def resolve_results_dir(results_dir: Path | None = None) -> Path:
         return OUT
     if (OUT / "CURVA_COPIA_OPERATIVA.csv").exists():
         return OUT
+    runs = MODULE / "_runs"
+    cands = [
+        p
+        for p in runs.glob("*/results")
+        if (p / "CURVA_COPIA_OPERATIVA.csv").exists()
+    ] if runs.is_dir() else []
+    if cands:
+        cands.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        return cands[0]
     det_a = MODULE / "_runs" / "det_A" / "results"
     if (det_a / "CURVA_COPIA_OPERATIVA.csv").exists():
         return det_a

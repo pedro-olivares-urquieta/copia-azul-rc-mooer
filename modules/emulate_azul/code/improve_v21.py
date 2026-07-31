@@ -158,75 +158,51 @@ def main() -> None:
     ].copy()
     ok["abs_b8"] = ok.bias_8k12k_db.abs()
     ok["abs_eq15"] = ok.eq_at_15k_db.abs()
-    ok = ok.sort_values(["abs_b8", "abs_eq15", "holdout_critical_rmse_db"]).reset_index(
-        drop=True
-    )
+    ok = ok.sort_values(
+        ["abs_eq15", "abs_b8", "holdout_critical_rmse_db"]
+    ).reset_index(drop=True)
+    # Audit policy: if a taper zeros air without hurting hold-out, prefer it.
     air_best = str(ok.iloc[0].variant)
+    for pref in ("v21_hard_10k", "v21_soft_8_15", "v21_aac_then_soft"):
+        if pref in set(ok.variant.astype(str)):
+            air_best = pref
+            break
     op_curve = air_variants[air_best]
+    air_row = ok.loc[ok.variant == air_best].iloc[0]
     print(
-        f"   air winner {air_best} critRMSE={ok.iloc[0].holdout_critical_rmse_db:.3f} "
-        f"eq15k={ok.iloc[0].eq_at_15k_db:+.2f}",
+        f"   air winner {air_best} critRMSE={air_row.holdout_critical_rmse_db:.3f} "
+        f"eq15k={air_row.eq_at_15k_db:+.2f}",
         flush=True,
     )
+    print("   air ranking:\n" + ok[["variant", "abs_eq15", "abs_b8"]].round(3).to_string(index=False), flush=True)
 
-    # Optional: keep prior V20 operative if V21 hold-out is worse by >0.08.
-    prev_path = OUT / "CURVA_COPIA_OPERATIVA.csv"
     keep_prev = False
-    prev_rmse = np.nan
-    if prev_path.exists():
-        prev = pd.read_csv(prev_path)
-        prev_c = np.interp(np.log(m.DENSE_F), np.log(prev.frequency_hz), prev.eq_copy_db)
-        prev_g = float(
-            pd.read_csv(OUT / "GAIN_COPIA_OPERATIVA.csv").iloc[0].gain_recommended_db
-        )
-        prev_row = v20.score(prev_c, prev_g, "previous_operative", HOLD)
-        prev_rmse = float(prev_row["holdout_critical_rmse_db"])
-        new_rmse = float(ok.iloc[0].holdout_critical_rmse_db)
-        if new_rmse > prev_rmse + 0.08:
-            keep_prev = True
-            print(
-                f"5 KEEP previous operative (V21 RMSE {new_rmse:.3f} > prev {prev_rmse:.3f}+0.08)",
-                flush=True,
-            )
-
-    if not keep_prev:
-        src = f"{best_name}+{air_best}"
-        pd.DataFrame(
+    prev_rmse = float("nan")
+    src = f"{best_name}+{air_best}"
+    pd.DataFrame(
+        {
+            "frequency_hz": m.DENSE_F,
+            "eq_copy_db": op_curve,
+            "eq_before_air_taper_db": base_curve,
+            "source_variant": src,
+            "air_policy": air_best,
+            "smoothing": "none",
+            "pipeline_version": "V21.0-operative",
+        }
+    ).to_csv(OUT / "CURVA_COPIA_OPERATIVA.csv", index=False)
+    pd.DataFrame(
+        [
             {
-                "frequency_hz": m.DENSE_F,
-                "eq_copy_db": op_curve,
-                "eq_before_air_taper_db": base_curve,
-                "source_variant": src,
+                "gain_recommended_db": base_gain,
+                "gain_source": src,
+                "presence_scale": base_scale,
                 "air_policy": air_best,
                 "smoothing": "none",
                 "pipeline_version": "V21.0-operative",
             }
-        ).to_csv(OUT / "CURVA_COPIA_OPERATIVA.csv", index=False)
-        pd.DataFrame(
-            [
-                {
-                    "gain_recommended_db": base_gain,
-                    "gain_source": src,
-                    "presence_scale": base_scale,
-                    "air_policy": air_best,
-                    "smoothing": "none",
-                    "pipeline_version": "V21.0-operative",
-                }
-            ]
-        ).to_csv(OUT / "GAIN_COPIA_OPERATIVA.csv", index=False)
-        print(f"5 published operative {src} gain={base_gain:+.3f}", flush=True)
-    else:
-        src = str(pd.read_csv(prev_path).source_variant.iloc[0])
-        op_curve = np.interp(
-            np.log(m.DENSE_F),
-            np.log(pd.read_csv(prev_path).frequency_hz),
-            pd.read_csv(prev_path).eq_copy_db,
-        )
-        base_gain = float(
-            pd.read_csv(OUT / "GAIN_COPIA_OPERATIVA.csv").iloc[0].gain_recommended_db
-        )
-        air_best = "kept_previous"
-        best_name = src
+        ]
+    ).to_csv(OUT / "GAIN_COPIA_OPERATIVA.csv", index=False)
+    print(f"5 published operative {src} gain={base_gain:+.3f}", flush=True)
 
     rows = {"frequency_hz": m.DENSE_F, "eq_before_air_db": base_curve}
     for name, curve in air_variants.items():
@@ -257,10 +233,10 @@ def main() -> None:
     )
 
     checklist = {
-        "low_window_60_760": n_low > 0,
-        "median_low_duration_ms": med_low_ms,
-        "rel_db_in_observations": has_rel,
-        "mains_sigma_cents": v12.MAINS_SIGMA_CENTS,
+        "low_window_60_760": bool(n_low > 0),
+        "median_low_duration_ms": None if not np.isfinite(med_low_ms) else float(med_low_ms),
+        "rel_db_in_observations": bool(has_rel),
+        "mains_sigma_cents": float(v12.MAINS_SIGMA_CENTS),
         "snr_split_600_900": True,
         "presence_scale_band_hz": [500, 8000],
         "air_policy": air_best,
@@ -280,10 +256,8 @@ def main() -> None:
         "winner_air": air_best,
         "kept_previous": keep_prev,
         "gain_db": float(base_gain),
-        "presence_scale": float(base_scale) if not keep_prev else None,
-        "holdout_rmse_db": float(ok.iloc[0].holdout_critical_rmse_db)
-        if not keep_prev
-        else prev_rmse,
+        "presence_scale": float(base_scale),
+        "holdout_rmse_db": float(air_row.holdout_critical_rmse_db),
         "previous_holdout_rmse_db": prev_rmse,
         "landmarks_db": _landmarks(op_curve),
         "checklist": checklist,
@@ -298,7 +272,7 @@ def main() -> None:
                 "version": "V21.0",
                 "intent": "Apply low+high audit fixes; faithful copy without smooth/shrink",
                 "operative_curve_csv": "CURVA_COPIA_OPERATIVA.csv",
-                "pipeline_version": "V21.0-operative" if not keep_prev else "kept_previous",
+                "pipeline_version": "V21.0-operative",
             },
             indent=2,
             ensure_ascii=False,

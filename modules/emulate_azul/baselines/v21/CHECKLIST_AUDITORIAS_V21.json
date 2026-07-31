@@ -1,0 +1,17 @@
+{
+  "low_window_60_760": true,
+  "median_low_duration_ms": 482.1088435374149,
+  "rel_db_in_observations": true,
+  "mains_sigma_cents": 28.0,
+  "snr_split_600_900": true,
+  "presence_scale_band_hz": [
+    500,
+    8000
+  ],
+  "air_policy": "v21_hard_10k",
+  "refused": [
+    "octave_smooth_operative",
+    "eq_times_reliability",
+    "fixed_physical_multipliers"
+  ]
+}

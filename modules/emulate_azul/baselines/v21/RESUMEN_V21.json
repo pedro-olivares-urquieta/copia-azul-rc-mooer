@@ -1,0 +1,44 @@
+{
+  "run_id": "v21_20260731T105230Z",
+  "winner_presence": "v21_fretted_presence_robust",
+  "winner_air": "v21_hard_10k",
+  "kept_previous": false,
+  "gain_db": -12.903711407362225,
+  "presence_scale": 0.38,
+  "holdout_rmse_db": 4.297617574826196,
+  "previous_holdout_rmse_db": NaN,
+  "landmarks_db": {
+    "30.87": -1.5009521755865476,
+    "55": 0.300101931835761,
+    "98": -2.0642226051569645,
+    "220": 1.888869032547745,
+    "350": 2.953252180416934,
+    "400": 4.427523504677112,
+    "515": 2.502333135403633,
+    "900": 1.7696007624939236,
+    "2500": 5.013648698406442,
+    "4000": -0.17986210317797072,
+    "8000": -4.966305728796932,
+    "10000": -0.0018431033890202065,
+    "15000": 0.0,
+    "18000": 0.0
+  },
+  "checklist": {
+    "low_window_60_760": true,
+    "median_low_duration_ms": 482.1088435374149,
+    "rel_db_in_observations": true,
+    "mains_sigma_cents": 28.0,
+    "snr_split_600_900": true,
+    "presence_scale_band_hz": [
+      500,
+      8000
+    ],
+    "air_policy": "v21_hard_10k",
+    "refused": [
+      "octave_smooth_operative",
+      "eq_times_reliability",
+      "fixed_physical_multipliers"
+    ]
+  },
+  "elapsed_s": 46.64928889274597
+}

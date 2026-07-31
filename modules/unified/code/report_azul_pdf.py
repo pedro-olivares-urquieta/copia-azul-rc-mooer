@@ -40,6 +40,16 @@ def _load_build(paths: RepoPaths):
 
 
 def _results_dir(paths: RepoPaths) -> Path:
+    """Prefer the newest `_runs/*/results` that holds an operative curve."""
+    runs = paths.emulate_azul / "_runs"
+    candidates: list[Path] = []
+    if runs.is_dir():
+        for p in runs.glob("*/results"):
+            if (p / "CURVA_COPIA_OPERATIVA.csv").exists():
+                candidates.append(p)
+    if candidates:
+        candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+        return candidates[0]
     det = paths.emulate_azul / "_runs" / "det_A" / "results"
     if (det / "CURVA_COPIA_OPERATIVA.csv").exists():
         return det
@@ -115,7 +125,12 @@ def _operative_meta(op: pd.DataFrame) -> dict:
 def _holdout_from_results(out: Path, op: pd.DataFrame) -> float | None:
     """Prefer V20 resumen/ranking; fall back to older hold-out files."""
     # 1) Authoritative V20 summary written by improve_v20
-    for name in ("RESUMEN_V20.json", "RESUMEN_V19.json", "RESUMEN_V17.json"):
+    for name in (
+        "RESUMEN_V21.json",
+        "RESUMEN_V20.json",
+        "RESUMEN_V19.json",
+        "RESUMEN_V17.json",
+    ):
         path = out / name
         if not path.exists():
             continue
@@ -127,6 +142,8 @@ def _holdout_from_results(out: Path, op: pd.DataFrame) -> float | None:
     source = str(op.source_variant.iloc[0]) if "source_variant" in op.columns else ""
     air = str(op.air_policy.iloc[0]) if "air_policy" in op.columns else ""
     for rank_name in (
+        "FIDELIDAD_RANKING_AIRE_V21.csv",
+        "FIDELIDAD_RANKING_HOLDOUT_V21.csv",
         "FIDELIDAD_RANKING_AIRE_V20.csv",
         "FIDELIDAD_RANKING_HOLDOUT_V19.csv",
         "FIDELIDAD_RANKING_HOLDOUT_V18.csv",
@@ -521,7 +538,9 @@ def _plot_fidelity_copy(pdf: PdfPages, paths: RepoPaths, m, f_op, y_op, gain: fl
     rank_path = None
     rank_title = "5b. Ranking hold-out"
     for name, title in (
-        ("FIDELIDAD_RANKING_AIRE_V20.csv", "5b. Ranking aire V20 (operativa actual)"),
+        ("FIDELIDAD_RANKING_AIRE_V21.csv", "5b. Ranking aire V21 (operativa actual)"),
+        ("FIDELIDAD_RANKING_HOLDOUT_V21.csv", "5b. Ranking hold-out V21"),
+        ("FIDELIDAD_RANKING_AIRE_V20.csv", "5b. Ranking aire V20"),
         ("FIDELIDAD_RANKING_HOLDOUT_V19.csv", "5b. Ranking hold-out V19 (base)"),
         ("FIDELIDAD_RANKING_HOLDOUT_V18.csv", "5b. Ranking hold-out V18"),
         ("FIDELIDAD_RANKING_HOLDOUT_V17.csv", "5b. Ranking hold-out V17"),
