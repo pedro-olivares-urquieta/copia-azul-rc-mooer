@@ -77,10 +77,27 @@ def tonal_proximity(f: np.ndarray, f0: np.ndarray, kind: np.ndarray) -> np.ndarr
     return out
 
 
-def relative_energy_score(snr_db: np.ndarray, freq: np.ndarray) -> np.ndarray:
-    """Proxy for V4.1 §20/§25.2 using SNR vs regional floor (no raw PSD in CSVs)."""
+def relative_energy_score(
+    snr_db: np.ndarray,
+    freq: np.ndarray,
+    rel_db: np.ndarray | None = None,
+) -> np.ndarray:
+    """V4.1 relative-energy score; prefer ``rel_db`` (event peak) when present.
+
+    Falls back to the SNR-vs-threshold proxy used before V21.
+    """
+    freq = np.asarray(freq, float)
+    if rel_db is not None:
+        rel = np.asarray(rel_db, float)
+        if np.isfinite(rel).any():
+            thr = v12.relative_energy_threshold(freq)
+            raw = np.clip((rel - thr) / 28.0, 0.0, 1.0)
+            # Where rel_db missing, blend in SNR proxy.
+            snr_thr = v12.snr_threshold(freq)
+            snr_raw = np.clip((np.asarray(snr_db, float) - snr_thr) / 28.0, 0.0, 1.0)
+            raw = np.where(np.isfinite(rel), raw, snr_raw)
+            return np.sqrt(raw)
     thr = v12.snr_threshold(freq)
-    # Softer than hard gate: (snr - thr) / 28, then sqrt as in V4.1.
     raw = np.clip((np.asarray(snr_db, float) - thr) / 28.0, 0.0, 1.0)
     return np.sqrt(raw)
 
@@ -127,21 +144,29 @@ def enrich_observations(gain_db: float) -> pd.DataFrame:
 
     f = obs.f.to_numpy(float)
     obs["tonal_score"] = tonal_proximity(f, obs.f0.to_numpy(float), obs.kind.to_numpy())
-    obs["rel_energy_score"] = relative_energy_score(obs.snr.to_numpy(float), f)
+    rel_col = obs["rel_db"].to_numpy(float) if "rel_db" in obs.columns else None
+    obs["rel_energy_score"] = relative_energy_score(obs.snr.to_numpy(float), f, rel_col)
     obs["phase_mix"] = v14._phase_mix_weight(f, obs.phase.to_numpy())
     obs["snr_score"] = np.clip((obs.snr.to_numpy(float) - v12.snr_threshold(f)) / 18.0, 0.0, 1.0)
     obs["codec_prior"] = v12.codec_prior(f)
     obs["open_mask"] = v12.open_string_mask(f, obs.family.to_numpy())
     obs["mains_factor"] = v12.mains_factor(f, obs.snr.to_numpy(float))
 
-    # Windows → cycles.
+    # Windows → cycles. Prefer true `low` durations (~700 ms) when present.
     win = pd.read_csv(OUT / "VENTANAS_ADAPTATIVAS_V10_2.csv")
     obs = obs.merge(
         win[["pair", "event", "phase", "duration_cafe_ms"]],
         on=["pair", "event", "phase"],
         how="left",
     )
-    obs["duration_s"] = obs.duration_cafe_ms.fillna(165.0) / 1000.0
+    # Body fallback 165 ms; low-phase missing rows use 400 ms nominal (conservative).
+    is_low = obs.phase.to_numpy(object) == "low"
+    dur_ms = obs.duration_cafe_ms.to_numpy(float)
+    missing = ~np.isfinite(dur_ms)
+    dur_ms = dur_ms.copy()
+    dur_ms[missing & is_low] = 400.0
+    dur_ms[missing & ~is_low] = 165.0
+    obs["duration_s"] = dur_ms / 1000.0
     obs["cycles_score"] = v12.cycles_score(f, obs.duration_s, obs.phase)
 
     obs["w"] = (
@@ -286,15 +311,18 @@ def calibrate_presence_scale(
     curve_dense: np.ndarray,
     gain_db: float,
     pairs: list[str],
+    *,
+    scale_lo_hz: float = 500.0,
+    scale_hi_hz: float = 8000.0,
 ) -> tuple[np.ndarray, float, float]:
-    """Scale EQ above 500 Hz (no smoothing) to minimise Café→Azul render RMSE.
+    """Scale EQ in presence/brillo only (default 0.5–8 kHz), not air.
 
-    Pair-first detail overshoots presence; a single scale keeps the shape
-    but makes the copy faithful in the render metric.
+    V20 audit: scaling everything ≥500 Hz dragged 10–18 kHz to +3.7 dB.
+    V21 limits the scale to the critical copy band; air is tapered later.
     """
     fgrid = m.DENSE_F
     base = np.asarray(curve_dense, float)
-    mask = fgrid >= 500.0
+    mask = (fgrid >= scale_lo_hz) & (fgrid < scale_hi_hz)
 
     # Preload audio + Azul spectra once.
     cache = []

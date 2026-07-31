@@ -50,13 +50,24 @@ import run_manifest  # noqa: E402
 # Minimum SNR per spectral region, in dB. Mids are cheapest because they carry
 # the most energy and repeat best; the top end is dearest because low-energy
 # noise there is easy to mistake for brightness.
+# V21: split medio-bajo 350–600 / 600–900 (V4.1 bajos) while keeping high-band floors.
 SNR_THRESHOLDS = [
     (25, 120, 10.0),
     (120, 350, 9.0),
-    (350, 2500, 8.0),
+    (350, 600, 8.0),
+    (600, 900, 8.0),
+    (900, 2500, 8.0),
     (2500, 6000, 10.0),
     (6000, 10000, 12.0),
     (10000, 18000, 14.0),
+]
+
+# V4.1 relative-energy floors (dB re event peak) under 900 Hz.
+RELATIVE_ENERGY_THRESHOLDS = [
+    (25, 120, -58.0),
+    (120, 350, -68.0),
+    (350, 900, -82.0),
+    (900, 1e9, -90.0),
 ]
 
 # How much an AAC file at ~100 kbps can still be trusted per band.
@@ -70,7 +81,8 @@ CODEC_PRIOR = [
 ]
 
 MAINS_HZ = (50.0, 100.0, 150.0)
-MAINS_SIGMA_CENTS = 40.0
+# V4.1 uses σ≈28 cents around 50/100/150 Hz (Chile mains).
+MAINS_SIGMA_CENTS = 28.0
 MAINS_PENALTY = 0.72
 MAINS_SNR_LIMIT_DB = 18.0
 
@@ -87,6 +99,10 @@ def _piecewise(freq: np.ndarray, table, default: float) -> np.ndarray:
 
 def snr_threshold(freq: np.ndarray) -> np.ndarray:
     return _piecewise(freq, SNR_THRESHOLDS, 14.0)
+
+
+def relative_energy_threshold(freq: np.ndarray) -> np.ndarray:
+    return _piecewise(freq, RELATIVE_ENERGY_THRESHOLDS, -90.0)
 
 
 def codec_prior(freq: np.ndarray) -> np.ndarray:

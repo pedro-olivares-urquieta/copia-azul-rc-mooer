@@ -26,7 +26,7 @@ def main():
     # event in traj is matched event index; derive mapping order from matching rows
     match['event']=match.groupby('pair').cumcount()
     traj=traj.merge(match[['pair','event','match_cost']],on=['pair','event'],how='left')
-    phase_dur={'attack':.075,'stabilization':.08,'body':.165,'sustain':.17,'decay':.12}
+    phase_dur={'attack':.075,'stabilization':.08,'body':.165,'sustain':.17,'decay':.12,'low':.70}
     phase_w=m.PHASE_W
     noise_cache={}
     fund=[]

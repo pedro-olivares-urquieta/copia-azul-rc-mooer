@@ -42,15 +42,17 @@ KERNEL_SIGMA_OCT = 1.0 / 8.0
 # V4.1 §29 regional mix, mapped onto our phases.
 # low-window role → body (long tonal window); sustain/attack keep their names.
 # Columns: attack, stabilization, body, sustain, decay — sum = 1.
+# Columns: attack, stabilization, body, sustain, decay, low — sum = 1.
+# V21: V4.1 `low` window carries the 82%/38% sub-bass/bass mass (not short body).
 PHASE_MIX = [
-    # lo, hi, att, stab, body, sus, decay
-    (0, 120, 0.02, 0.00, 0.82, 0.16, 0.00),
-    (120, 350, 0.10, 0.00, 0.38, 0.52, 0.00),
-    (350, 600, 0.18, 0.00, 0.08, 0.74, 0.00),
-    (600, 2500, 0.26, 0.00, 0.00, 0.74, 0.00),
-    (2500, 6000, 0.40, 0.00, 0.00, 0.60, 0.00),
-    (6000, 10000, 0.64, 0.00, 0.00, 0.36, 0.00),
-    (10000, 1e9, 0.80, 0.00, 0.00, 0.20, 0.00),
+    (0, 120, 0.02, 0.00, 0.00, 0.16, 0.00, 0.82),
+    (120, 350, 0.10, 0.00, 0.00, 0.52, 0.00, 0.38),
+    (350, 600, 0.18, 0.00, 0.08, 0.74, 0.00, 0.00),
+    (600, 900, 0.26, 0.00, 0.00, 0.74, 0.00, 0.00),
+    (900, 2500, 0.26, 0.00, 0.00, 0.74, 0.00, 0.00),
+    (2500, 6000, 0.40, 0.00, 0.00, 0.60, 0.00, 0.00),
+    (6000, 10000, 0.64, 0.00, 0.00, 0.36, 0.00, 0.00),
+    (10000, 1e9, 0.80, 0.00, 0.00, 0.20, 0.00, 0.00),
 ]
 
 # Candidate smoothing widths (octaves) per region — V4.1 §33.
@@ -75,18 +77,25 @@ def _phase_mix_weight(freq: np.ndarray, phase: np.ndarray) -> np.ndarray:
         "body": 2,
         "sustain": 3,
         "decay": 4,
+        "low": 5,
     }
+    has_low = bool(np.any(ph == "low"))
     out = np.ones(len(f), dtype=float)
     for lo, hi, *weights in PHASE_MIX:
         sel = (f >= lo) & (f < hi)
         if not sel.any():
             continue
         wtab = np.asarray(weights, float)
-        # Renormalise in case of rounding.
+        # Legacy tables without a `low` column.
+        if len(wtab) < 6:
+            wtab = np.r_[wtab, 0.0]
         wtab = wtab / max(wtab.sum(), 1e-12)
         for name, i in phase_idx.items():
             msk = sel & (ph == name)
             out[msk] = wtab[i]
+        # Pre-V21 CSVs: map V4.1 low mass onto body when `low` phase is absent.
+        if (not has_low) and wtab[5] > 0:
+            out[sel & (ph == "body")] = wtab[5] + wtab[2]
     return out
 
 
