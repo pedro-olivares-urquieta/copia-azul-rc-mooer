@@ -1,8 +1,9 @@
 # Mapa metodológico: informe V4.1 ultraprofundo ↔ nuestro pipeline
 
 **Fecha:** 2026-07-31  
-**Nuestro stack:** V10.2 → V11 → V12 → V13 → **V14**  
-**Referencia:** informe metodológico ultraprofundo Café→Azul (V4.1, 912 pts, PSD Hann)
+**Nuestro stack:** V10.2 → V11 → V12 → V13 → V14 → **V15 (fidelidad sin suavizar)**  
+**Referencia:** informe metodológico ultraprofundo Café→Azul (V4.1, 912 pts, PSD Hann)  
+**Entregable de copia:** `eq_faithful_db` (V15) — ver `FIDELIDAD_SIN_SUAVIZAR.md`
 
 Regla de oro: **no adoptar como “mejora” algo que ya hacemos mejor**, ni reescribir la ciencia de `build_v10_2` de un golpe. Lo adoptado entra como post-proceso trazable (`improve_v12`…`v14`).
 
