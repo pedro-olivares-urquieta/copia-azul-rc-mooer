@@ -1,0 +1,62 @@
+{
+  "run_id": "repro_v10_2_20260730T235647Z",
+  "git_commit": "6bb5e39112f5d3c507b8ac5ad7398c03673ebc14",
+  "librosa": "0.11.0",
+  "numpy": "2.4.4",
+  "chain": [
+    "build_v10_2.py",
+    "repair_v10_2_gain.py",
+    "extract_tonal_repair.py",
+    "finalize_v10_2_corrected.py"
+  ],
+  "gain": {
+    "gain_recommended_db": {
+      "baseline": -10.5914945497307,
+      "repro": -10.74711232812146,
+      "delta": -0.15561777839076107
+    },
+    "ci95_low_db": {
+      "baseline": -11.801543301894126,
+      "repro": -12.399243438389757,
+      "delta": -0.5977001364956305
+    },
+    "ci95_high_db": {
+      "baseline": -8.358111158156872,
+      "repro": -9.034095264957134,
+      "delta": -0.6759841068002626
+    },
+    "fundamental_only_median_db": {
+      "baseline": -11.520956240194296,
+      "repro": -11.483419574010393,
+      "delta": 0.03753666618390383
+    },
+    "energy_only_median_db": {
+      "baseline": -9.674261461963852,
+      "repro": -10.217727444158069,
+      "delta": -0.5434659821942169
+    },
+    "model_intercept_diagnostic_db": {
+      "baseline": -9.936611583741511,
+      "repro": -10.187571119217758,
+      "delta": -0.2509595354762464
+    }
+  },
+  "curve": {
+    "rmse_db": 0.6656275264671003,
+    "max_abs_db": 2.2717268166462046,
+    "p95_abs_db": 1.903476724769477,
+    "median_db": -8.134675734404253e-07
+  },
+  "lambda_baseline": "ver CONFIG",
+  "lambda_repro": [
+    20,
+    5,
+    20,
+    0.7
+  ],
+  "matching_events": {
+    "baseline": 873,
+    "repro": 927
+  },
+  "verdict": "gain reproducible (<=0.16 dB); curva reproducible con RMSE 0.67 dB pero 2-4 kHz difiere hasta 2.3 dB"
+}

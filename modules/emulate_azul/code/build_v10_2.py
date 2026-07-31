@@ -13,6 +13,10 @@ from scipy.spatial.distance import cdist
 import matplotlib.pyplot as plt
 warnings.filterwarnings('ignore')
 
+# NumPy 2 removed the `trapz` alias; keep the identical trapezoidal rule.
+if not hasattr(np, 'trapz'):
+    np.trapz = np.trapezoid
+
 from repo_paths import ROOT, WAV, OUT, AUD, CODE, LEGACY, EXPORTS, AUDIO, ensure_runtime_dirs
 ensure_runtime_dirs()
 SR=44100; SEED=10202; RNG=np.random.default_rng(SEED)
