@@ -87,6 +87,67 @@ def _read_curve(path: Path, col: str) -> tuple[np.ndarray, np.ndarray] | None:
     return df["frequency_hz"].to_numpy(float), df[col].to_numpy(float)
 
 
+def _operative_meta(op: pd.DataFrame) -> dict:
+    """Labels and metadata for the current operative curve (must track pipeline_version)."""
+    row = op.iloc[0]
+    source = str(row["source_variant"]) if "source_variant" in op.columns else "operative"
+    air = str(row["air_policy"]) if "air_policy" in op.columns else ""
+    pipe = str(row["pipeline_version"]) if "pipeline_version" in op.columns else ""
+    # Prefer explicit pipeline_version (e.g. V20.0-operative) over the base+air source string.
+    if pipe:
+        short = pipe.replace("-operative", "").strip()
+        label = f"{short} operativa"
+        if air and air not in ("none", "", "nan"):
+            label = f"{label} · air {air}"
+    elif source.startswith("v19") and "+v20" in source:
+        label = f"V20 operativa · {source}"
+    else:
+        label = f"operativa · {source}"
+    return {
+        "source_variant": source,
+        "air_policy": air,
+        "pipeline_version": pipe,
+        "label": label,
+        "short_label": (pipe.replace("-operative", "").strip() if pipe else "operativa"),
+    }
+
+
+def _holdout_from_results(out: Path, op: pd.DataFrame) -> float | None:
+    """Prefer V20 resumen/ranking; fall back to older hold-out files."""
+    # 1) Authoritative V20 summary written by improve_v20
+    for name in ("RESUMEN_V20.json", "RESUMEN_V19.json", "RESUMEN_V17.json"):
+        path = out / name
+        if not path.exists():
+            continue
+        data = json.loads(path.read_text())
+        hold = float(data.get("holdout_rmse_db", float("nan")))
+        if np.isfinite(hold):
+            return hold
+
+    source = str(op.source_variant.iloc[0]) if "source_variant" in op.columns else ""
+    air = str(op.air_policy.iloc[0]) if "air_policy" in op.columns else ""
+    for rank_name in (
+        "FIDELIDAD_RANKING_AIRE_V20.csv",
+        "FIDELIDAD_RANKING_HOLDOUT_V19.csv",
+        "FIDELIDAD_RANKING_HOLDOUT_V18.csv",
+        "FIDELIDAD_RANKING_HOLDOUT_V17.csv",
+    ):
+        rank = out / rank_name
+        if not rank.exists():
+            continue
+        rdf = pd.read_csv(rank)
+        if "variant" not in rdf.columns or "holdout_critical_rmse_db" not in rdf.columns:
+            continue
+        for key in (source, air, source.split("+")[-1] if "+" in source else ""):
+            if not key:
+                continue
+            hit = rdf[rdf.variant.astype(str) == key]
+            if len(hit):
+                return float(hit.iloc[0]["holdout_critical_rmse_db"])
+        return float(rdf.iloc[0]["holdout_critical_rmse_db"])
+    return None
+
+
 def _spectrum_db(y: np.ndarray, sr: int, nperseg: int = 8192):
     y = y - np.mean(y)
     n = max(int(0.02 * sr), 1)
@@ -97,8 +158,16 @@ def _spectrum_db(y: np.ndarray, sr: int, nperseg: int = 8192):
     return f, 10 * np.log10(np.maximum(P, 1e-30))
 
 
-def _cover(pdf: PdfPages, out: Path, gain: float, variant: str, hold: float | None) -> None:
+def _cover(
+    pdf: PdfPages,
+    out: Path,
+    gain: float,
+    meta: dict,
+    hold: float | None,
+) -> None:
     hold_s = f"{hold:.3f} dB" if hold is not None and np.isfinite(hold) else "n/d"
+    air = meta.get("air_policy") or "n/d"
+    pipe = meta.get("pipeline_version") or meta["label"]
     _page_text(
         pdf,
         "Informe Café → Azul — copia fiel (sin suavizar)",
@@ -108,10 +177,14 @@ def _cover(pdf: PdfPages, out: Path, gain: float, variant: str, hold: float | No
             "",
             "Repasada general (evidencia = 16 parejas AAC / 32 M4A):",
             "  · Separación nivel vs timbre: gain ≈ −12 dB (consenso V12/V15/V17/V4.1)",
-            f"  · EQ operativa: {variant}",
+            f"  · EQ operativa: {meta['label']}",
+            f"  · pipeline_version: {pipe}",
+            f"  · source_variant: {meta['source_variant']}",
+            f"  · air_policy: {air}",
             f"  · Gain operativa: {gain:+.3f} dB",
             f"  · Hold-out crítico 0.5–8 kHz: {hold_s}",
             "  · Sin suavizado regional ni contracción EQ×reliability",
+            "  · Aire 10–18 kHz: taper V20 (eq_copy ≠ V19 cruda encima de 10 kHz)",
             "",
             "Qué hacemos mejor que V4.1: DPSS, F0 refine, matching acústico,",
             "offsets estimados, repro bit-idéntica, métrica render Café+EQ vs Azul.",
@@ -124,8 +197,8 @@ def _cover(pdf: PdfPages, out: Path, gain: float, variant: str, hold: float | No
             "",
             "Contenido:",
             "  1) Espectros Café vs Azul (pares representativos)",
-            "  2) EQ operativa + total con gain",
-            "  3) Todas las curvas de transferencia (V10.2…V17)",
+            "  2) EQ operativa V20 + total con gain (+ taper aire)",
+            "  3) Todas las curvas de transferencia (V10.2…V20)",
             "  4) Curvas por fase (ataque/sustain/cuerpo)",
             "  5) Café+EQ vs Azul (fidelidad de copia)",
             "  6) RC + composición con EQ fiel",
@@ -192,28 +265,42 @@ def _plot_cafe_azul_spectra(pdf: PdfPages, paths: RepoPaths, m) -> None:
 
 
 def _plot_operative(
-    pdf: PdfPages, out: Path, gain: float, variant: str
+    pdf: PdfPages, out: Path, gain: float, meta: dict
 ) -> tuple[np.ndarray, np.ndarray]:
     op = pd.read_csv(out / "CURVA_COPIA_OPERATIVA.csv")
     f = op.frequency_hz.to_numpy(float)
     y = op.eq_copy_db.to_numpy(float)
     total = y + gain
+    y_before = (
+        op.eq_before_air_taper_db.to_numpy(float)
+        if "eq_before_air_taper_db" in op.columns
+        else None
+    )
 
     fig, axes = plt.subplots(2, 2, figsize=(11.69, 8.27))
     fig.suptitle(
-        f"2. EQ operativa fiel — {variant}  (gain {gain:+.2f} dB)",
-        fontsize=13,
+        f"2. EQ operativa fiel — {meta['label']}  (gain {gain:+.2f} dB)",
+        fontsize=12,
         fontweight="bold",
     )
 
     ax = axes[0, 0]
-    ax.semilogx(f, y, color="#0b6e4f", lw=2.0, label="eq_copy (timbre)")
+    if y_before is not None:
+        ax.semilogx(
+            f,
+            y_before,
+            color="#7a9e8a",
+            lw=1.2,
+            ls="--",
+            label="antes taper aire (base V19)",
+        )
+    ax.semilogx(f, y, color="#0b6e4f", lw=2.0, label="eq_copy V20 (operativa)")
     ax.axhline(0, color="k", lw=0.6)
     ax.set_xlim(20, 18000)
     ax.set_title("Timbre (sin gain)")
     ax.set_xlabel("Hz")
     ax.set_ylabel("dB")
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=7)
 
     ax = axes[0, 1]
     ax.semilogx(f, total, color="#c45c26", lw=2.0, label="timbre + gain")
@@ -225,14 +312,6 @@ def _plot_operative(
     ax.legend(fontsize=8)
 
     ax = axes[1, 0]
-    msk = f <= 350
-    ax.plot(f[msk], y[msk], color="#0b6e4f", lw=1.8)
-    ax.axhline(0, color="k", lw=0.6)
-    ax.set_title("Zoom ≤350 Hz")
-    ax.set_xlabel("Hz")
-    ax.set_ylabel("dB")
-
-    ax = axes[1, 1]
     msk = (f >= 500) & (f <= 8000)
     ax.semilogx(f[msk], y[msk], color="#0b6e4f", lw=1.8)
     ax.axhline(0, color="k", lw=0.6)
@@ -240,15 +319,36 @@ def _plot_operative(
     ax.set_xlabel("Hz")
     ax.set_ylabel("dB")
 
+    ax = axes[1, 1]
+    msk = f >= 6000
+    if y_before is not None:
+        ax.semilogx(
+            f[msk],
+            y_before[msk],
+            color="#7a9e8a",
+            lw=1.3,
+            ls="--",
+            label="antes taper",
+        )
+    ax.semilogx(f[msk], y[msk], color="#0b6e4f", lw=2.0, label="eq_copy V20")
+    ax.axhline(0, color="k", lw=0.6)
+    ax.set_xlim(6000, 18000)
+    air = meta.get("air_policy") or "taper"
+    ax.set_title(f"Zoom aire 6–18 kHz ({air})")
+    ax.set_xlabel("Hz")
+    ax.set_ylabel("dB")
+    ax.legend(fontsize=7)
+
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     pdf.savefig(fig)
     plt.close(fig)
     return f, y
 
 
-def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op) -> None:
-    grid = np.geomspace(25, 16000, 2000)
+def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op, meta: dict) -> None:
+    grid = np.geomspace(25, 18000, 2000)
     series = []
+    op_label = meta["label"]
 
     def add(label, path, col, color, lw=1.4, ls="-"):
         cur = _read_curve(path, col)
@@ -263,8 +363,16 @@ def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op) -> None:
     add("V14 pair-first", out / "CURVAS_DENSAS_V14.csv", "energy_neutral_db", "#bc6c25", 1.2)
     add("V15 faithful", out / "CURVAS_DENSAS_V15_FIEL.csv", "eq_faithful_db", "#1d3557", 1.5)
     add("V16 faithful", out / "CURVAS_DENSAS_V16_FIEL.csv", "eq_faithful_db", "#457b9d", 1.3)
+    add(
+        "V19 presence_robust (base)",
+        out / "CURVAS_DENSAS_V19.csv",
+        "faithful_v19_presence_robust_db",
+        "#b08968",
+        1.4,
+        "--",
+    )
     series.append(
-        ("V17 operativa (copia)", _interp(f_op, y_op, grid), "#0b6e4f", 2.2, "-")
+        (op_label, _interp(f_op, y_op, grid), "#0b6e4f", 2.2, "-")
     )
 
     fig, axes = plt.subplots(2, 1, figsize=(11.69, 8.27), sharex=False)
@@ -277,7 +385,7 @@ def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op) -> None:
     for label, y, color, lw, ls in series:
         ax.semilogx(grid, y, label=label, color=color, lw=lw, ls=ls)
     ax.axhline(0, color="k", lw=0.5)
-    ax.set_xlim(25, 16000)
+    ax.set_xlim(25, 18000)
     ax.set_ylim(-8, 16)
     ax.set_ylabel("dB")
     ax.set_title("Comparación completa (timbre, sin gain global)")
@@ -309,7 +417,17 @@ def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op) -> None:
         5190: 4.33,
     }
     fig, ax = plt.subplots(figsize=(11.69, 8.27))
-    ax.semilogx(grid, _interp(f_op, y_op, grid), color="#0b6e4f", lw=2.2, label="V17 operativa")
+    ax.semilogx(grid, _interp(f_op, y_op, grid), color="#0b6e4f", lw=2.2, label=op_label)
+    v19 = _read_curve(out / "CURVAS_DENSAS_V19.csv", "faithful_v19_presence_robust_db")
+    if v19:
+        ax.semilogx(
+            grid,
+            _interp(v19[0], v19[1], grid),
+            color="#b08968",
+            lw=1.3,
+            ls="--",
+            label="V19 presence_robust (base, sin taper aire)",
+        )
     v15 = _read_curve(out / "CURVAS_DENSAS_V15_FIEL.csv", "eq_faithful_db")
     if v15:
         ax.semilogx(grid, _interp(v15[0], v15[1], grid), color="#1d3557", lw=1.3, label="V15")
@@ -325,11 +443,11 @@ def _plot_all_transfers(pdf: PdfPages, out: Path, f_op, y_op) -> None:
         label="V4.1 puntos informe",
     )
     ax.axhline(0, color="k", lw=0.5)
-    ax.set_xlim(40, 10000)
+    ax.set_xlim(40, 18000)
     ax.set_xlabel("Hz")
     ax.set_ylabel("dB")
-    ax.set_title("3b. Operativa vs puntos V4.1 (referencia analítica, no verdad absoluta)")
-    ax.legend(fontsize=9)
+    ax.set_title("3b. Operativa V20 vs V19 base / puntos V4.1")
+    ax.legend(fontsize=8)
     fig.tight_layout()
     pdf.savefig(fig)
     plt.close(fig)
@@ -398,17 +516,39 @@ def _plot_fidelity_copy(pdf: PdfPages, paths: RepoPaths, m, f_op, y_op, gain: fl
     pdf.savefig(fig)
     plt.close(fig)
 
-    # Ranking table if present
-    rank_path = _results_dir(paths) / "FIDELIDAD_RANKING_HOLDOUT_V17.csv"
-    if rank_path.exists():
+    # Ranking table: prefer V20 air race, then newer hold-out rankings
+    results = _results_dir(paths)
+    rank_path = None
+    rank_title = "5b. Ranking hold-out"
+    for name, title in (
+        ("FIDELIDAD_RANKING_AIRE_V20.csv", "5b. Ranking aire V20 (operativa actual)"),
+        ("FIDELIDAD_RANKING_HOLDOUT_V19.csv", "5b. Ranking hold-out V19 (base)"),
+        ("FIDELIDAD_RANKING_HOLDOUT_V18.csv", "5b. Ranking hold-out V18"),
+        ("FIDELIDAD_RANKING_HOLDOUT_V17.csv", "5b. Ranking hold-out V17"),
+    ):
+        cand = results / name
+        if cand.exists():
+            rank_path = cand
+            rank_title = title
+            break
+    if rank_path is not None:
         rank = pd.read_csv(rank_path).head(8)
         fig = plt.figure(figsize=(11.69, 8.27))
-        fig.suptitle("5b. Ranking hold-out (V17)", fontsize=14, fontweight="bold")
+        fig.suptitle(rank_title, fontsize=14, fontweight="bold")
         ax = fig.add_subplot(111)
         ax.axis("off")
-        cols = [c for c in rank.columns if c in (
-            "variant", "holdout_critical_rmse_db", "bias_2k4k_db", "gain_db", "presence_scale"
-        )]
+        preferred = (
+            "variant",
+            "holdout_critical_rmse_db",
+            "bias_2k4k_db",
+            "bias_8k12k_db",
+            "eq_at_10k_db",
+            "eq_at_15k_db",
+            "eq_at_18k_db",
+            "gain_db",
+            "presence_scale",
+        )
+        cols = [c for c in preferred if c in rank.columns]
         cell = []
         for _, r in rank.iterrows():
             row = []
@@ -476,34 +616,41 @@ def _plot_rc_with_faithful(pdf: PdfPages, paths: RepoPaths, f_op, y_op, gain: fl
     plt.close(fig)
 
 
-def _closing(pdf: PdfPages, out: Path, gain: float, variant: str) -> None:
+def _closing(pdf: PdfPages, out: Path, gain: float, meta: dict) -> None:
+    op = pd.read_csv(out / "CURVA_COPIA_OPERATIVA.csv")
     pts = []
-    for hz in (98, 515, 958, 1360, 2630, 4120, 5190):
-        op = pd.read_csv(out / "CURVA_COPIA_OPERATIVA.csv")
+    for hz in (98, 515, 958, 1360, 2630, 4120, 5190, 8000, 10000, 15000, 18000):
         y = float(np.interp(np.log(hz), np.log(op.frequency_hz), op.eq_copy_db))
         pts.append(f"  {hz:5g} Hz → {y:+.2f} dB")
+    air = meta.get("air_policy") or "n/d"
     _page_text(
         pdf,
         "7. Cierre — estado de la copia Azul",
         [
-            f"EQ operativa: {variant}",
+            f"EQ operativa: {meta['label']}",
+            f"pipeline_version: {meta.get('pipeline_version') or 'n/d'}",
+            f"source_variant: {meta['source_variant']}",
+            f"air_policy: {air}",
             f"Gain: {gain:+.3f} dB  (reducir el Café)",
             "Smoothing: none",
             "",
-            "Puntos de la curva operativa:",
+            "Puntos de la curva operativa (eq_copy_db = V20 con taper aire):",
             *pts,
             "",
             "Archivos clave:",
             "  · CURVA_COPIA_OPERATIVA.csv / GAIN_COPIA_OPERATIVA.csv",
+            "  · RESUMEN_V20.json / FIDELIDAD_RANKING_AIRE_V20.csv",
             "  · FIDELIDAD_SIN_SUAVIZAR.md / MAPA_METODOLOGICO_V41_ULTRAPROFUNDO.md",
-            "  · Audios: renders/FIDELIDAD_V17/ESTEREO_L_COPIA_OPERATIVA_R_AZUL.flac",
+            "  · Audios: renders/FIDELIDAD_V20/…",
             "",
-            "Límite actual: 16 parejas AAC. V18 (phase-first, event-conf) no mejoró",
-            "el hold-out. El siguiente salto real es nueva evidencia (WAV/DI), no más",
-            "agregadores sobre los mismos M4A.",
+            "Nota: la base de presencia es V19 presence_robust; la EQ operativa",
+            "actual es V20 (taper aire 10–18 kHz). No confundir con la curva V19.",
+            "",
+            "Límite actual: 16 parejas AAC. El siguiente salto real es nueva",
+            "evidencia (WAV/DI), no más agregadores sobre los mismos M4A.",
             "",
             "Presets MOOER Azul+RC: no regenerados aquí (presencia aún frágil).",
-            "Este PDF documenta la EQ fiel y todas las curvas Café/Azul.",
+            "Este PDF documenta la EQ fiel V20 y todas las curvas Café/Azul.",
         ],
     )
 
@@ -525,57 +672,36 @@ def generate_azul_fidelity_report(
     op = pd.read_csv(out / "CURVA_COPIA_OPERATIVA.csv")
     gain_row = pd.read_csv(out / "GAIN_COPIA_OPERATIVA.csv").iloc[0]
     gain = float(gain_row["gain_recommended_db"])
-    variant = str(op.source_variant.iloc[0]) if "source_variant" in op.columns else "operative"
-
-    hold = None
-    for rank_name in (
-        "FIDELIDAD_RANKING_HOLDOUT_V19.csv",
-        "FIDELIDAD_RANKING_HOLDOUT_V17.csv",
-        "RESUMEN_V19.json",
-    ):
-        rank = out / rank_name
-        if not rank.exists():
-            continue
-        if rank.suffix == ".json":
-            hold = float(json.loads(rank.read_text()).get("holdout_rmse_db", float("nan")))
-            if np.isfinite(hold):
-                break
-            continue
-        rdf = pd.read_csv(rank)
-        # Prefer the row matching operative variant when present.
-        if "variant" in rdf.columns and "source_variant" in op.columns:
-            hit = rdf[rdf.variant.astype(str) == str(op.source_variant.iloc[0])]
-            if len(hit):
-                hold = float(hit.iloc[0]["holdout_critical_rmse_db"])
-                break
-        if "holdout_critical_rmse_db" in rdf.columns:
-            hold = float(rdf.iloc[0]["holdout_critical_rmse_db"])
-            break
+    meta = _operative_meta(op)
+    hold = _holdout_from_results(out, op)
 
     with PdfPages(output_pdf) as pdf:
-        _cover(pdf, output_pdf, gain, variant, hold)
+        _cover(pdf, output_pdf, gain, meta, hold)
         print("PDF: cafe/azul spectra...", flush=True)
         _plot_cafe_azul_spectra(pdf, paths, m)
         print("PDF: operative EQ...", flush=True)
-        f_op, y_op = _plot_operative(pdf, out, gain, variant)
+        f_op, y_op = _plot_operative(pdf, out, gain, meta)
         print("PDF: all transfers...", flush=True)
-        _plot_all_transfers(pdf, out, f_op, y_op)
+        _plot_all_transfers(pdf, out, f_op, y_op, meta)
         print("PDF: phases...", flush=True)
         _plot_phases(pdf, out)
         print("PDF: fidelity copy...", flush=True)
         _plot_fidelity_copy(pdf, paths, m, f_op, y_op, gain)
         print("PDF: RC composition...", flush=True)
         _plot_rc_with_faithful(pdf, paths, f_op, y_op, gain)
-        _closing(pdf, out, gain, variant)
+        _closing(pdf, out, gain, meta)
         d = pdf.infodict()
-        d["Title"] = "Informe copia fiel Café→Azul"
+        d["Title"] = f"Informe copia fiel Café→Azul — {meta['short_label']}"
         d["Author"] = "unified orchestrator"
-        d["Subject"] = f"{variant} gain={gain:.3f}dB"
+        d["Subject"] = f"{meta['source_variant']} air={meta.get('air_policy')} gain={gain:.3f}dB"
 
     summary = {
         "pdf": str(output_pdf),
         "results_dir": str(out),
-        "operative_variant": variant,
+        "operative_variant": meta["source_variant"],
+        "operative_label": meta["label"],
+        "pipeline_version": meta.get("pipeline_version"),
+        "air_policy": meta.get("air_policy"),
         "gain_db": gain,
         "holdout_rmse_db": hold,
         "pages": [
