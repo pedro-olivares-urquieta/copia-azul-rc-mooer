@@ -17,7 +17,8 @@ mkdir -p "$AZUL_OUT_DIR" "$AZUL_RENDERS_DIR"
 
 cd "$REPO"
 CODE=modules/emulate_azul/code
-for stage in build_v10_2 repair_v10_2_gain extract_tonal_repair finalize_v10_2_corrected; do
+STAGES=(build_v10_2 repair_v10_2_gain extract_tonal_repair finalize_v10_2_corrected improve_v11)
+for stage in "${STAGES[@]}"; do
   echo "=== $RUN_ID :: $stage ==="
   python3 "$CODE/$stage.py"
 done

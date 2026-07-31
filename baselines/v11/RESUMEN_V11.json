@@ -1,0 +1,23 @@
+{
+  "run_id": "v11_20260731T064113Z",
+  "gain_v10_2_db": -10.843424521321843,
+  "gain_v11_db": -11.06205198028742,
+  "gain_shift_db": -0.21862745896557634,
+  "loop_iterations": 2,
+  "loop_converged": true,
+  "final_intercept_residual_db": -0.008142829192397727,
+  "curve_min_db": -2.182604629228429,
+  "curve_max_db": 2.8579850942763705,
+  "valid_fraction": 0.67041015625,
+  "degraded_takes": 0,
+  "gain_spread_by_string_db": 6.933310283733201,
+  "lofo_worst_family": {
+    "held_out_family": "fret12",
+    "n_observations": 8658,
+    "n_pairs": 6,
+    "mae_db": 4.877533022917243,
+    "rmse_db": 6.561868338157585,
+    "p95_db": 14.324955710083216
+  },
+  "elapsed_s": 71.82995510101318
+}
