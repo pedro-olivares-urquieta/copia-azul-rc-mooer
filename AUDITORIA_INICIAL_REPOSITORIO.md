@@ -340,48 +340,82 @@ re-ejecución del mismo código da +1.1 dB.
 
 ## 6. Hallazgos
 
-### P0-1 — El gain global no es identificable con estos audios
+### P0-1 — [CORREGIDO 2026-07-31] El gain es del instrumento, no de la sesión
+
+```text
+ESTADO: cerrado. La hipótesis inicial de no identificabilidad era incorrecta.
+
+Evidencia decisiva:
+  1. El operador confirma que ambos instrumentos se grabaron en las MISMAS
+     condiciones (misma cadena, misma ganancia de entrada).
+  2. El test del piso de ruido que se había usado para sospechar de la sesión
+     NO ES VÁLIDO en este material. Si el piso fuera ruido de cadena sería
+     constante entre tomas de una misma sesión; medido sobre el silencio previo
+     al primer ataque (>= 2 s en 15/16 parejas):
+        piso Café: -78.2 ... -54.0 dBFS  -> rango 24.2 dB
+        piso Azul: -83.8 ... -71.1 dBFS  -> rango 12.8 dB
+     Un rango de 24 dB dentro de la misma sesión demuestra que el piso está
+     dominado por ruido del propio instrumento (pastillas, zumbido, cuerdas) y
+     por el códec AAC, que escalan con el nivel del programa.
+  3. Por eso d_floor (-11.07 dB) sigue a d_signal (-12.17 dB) y el SNR se
+     conserva (d_snr -2.00 dB): un instrumento de menor salida entrega también
+     menos zumbido de pastilla a través de la misma cadena. Esa firma es
+     compatible tanto con "otra ganancia de sesión" como con "instrumento más
+     débil", así que el test no discrimina.
+
+Conclusión:
+  La diferencia de nivel Azul-Café es una propiedad del INSTRUMENTO.
+     mediana de nivel activo   -12.17 dB
+     gain del pipeline         -10.59 dB (baseline) / -10.84 dB (determinista)
+  La diferencia entre ambos (~1.5 dB) es esperable y correcta: el gain del
+  pipeline se mide DESPUÉS de compensar el timbre (la ruta de energía aplica la
+  EQ con gain 0 y luego compara RMS), así que parte de los -12.17 dB la absorbe
+  la curva.
+
+Lo que SIGUE siendo un problema (ver P0-1b):
+  la dispersión de 11.25 dB entre parejas.
+```
+
+### P0-1b — Dispersión de 11.25 dB en el gain entre parejas
 
 ```text
 Hallazgo:
-  El "gain global Café→Azul" (-10.59 dB) es estadísticamente indistinguible de la
-  diferencia de nivel de grabación entre las dos sesiones.
+  El gain por pareja va de -5.40 dB (C_12) a -16.65 dB (B_open).
 
-Evidencia:
-  · Mediana ingenua de nivel activo Azul-Café = -12.11 dB (σ 2.24)
-  · gain_recommended del pipeline = -10.59 dB
-  · correlación entre ambos = 0.842
-  · el piso de ruido del Azul es MÁS BAJO que el del Café en 11 de 16 parejas
-    (mediana d_floor = -4.02 dB; hasta -30 dB en C_open)
-  · SNR del Azul se conserva o mejora en las cuerdas al aire, en lugar de degradarse
-    ~12 dB como cabría esperar de un instrumento realmente más débil en la misma cadena
-  · no existe ningún registro de la ganancia de preamp/interfaz en manifests/ ni docs/
+Evidencia (gain_combined_db, GAIN_POR_PAREJA_Y_FUENTE_V10_2.csv):
+     C_12    -5.40      G_12   -10.20      E_12   -13.42
+     C_24    -7.45      A_12   -10.80      B_12   -13.97
+     Cmaj7   -8.14      A_open -11.17      B_open -16.65
+     D_open  -8.36      C_chrom-11.31
+     D_12    -8.47      C_open -11.73
+     G_open  -9.01      E_open -12.69
+     Am7     -9.59
+  Rango: 11.25 dB. Mediana ponderada publicada: -10.59 dB.
+  Nivel activo bruto por pareja: rango -16.23 ... -8.09 dB (sigma 2.24).
 
 Impacto:
-  Todo el valor de gain publicado, su CI y su uso operativo (incluido el preset
-  Azul+RC del orquestador, que lo incorpora) puede estar midiendo la sesión de
-  grabación en lugar del instrumento. Afecta headroom y nivel percibido.
+  Un solo escalar no describe el comportamiento del instrumento: el Azul es
+  ~16 dB más débil en B_open (cuerda grave al aire) y sólo ~5 dB en C_12. Esa
+  estructura es información real, no ruido, y hoy se colapsa a un número.
 
 Hipótesis:
-  H1 - las dos sesiones usaron ganancias de entrada distintas (~12 dB)
-  H2 - el Azul entrega realmente menos nivel de salida
-  H3 - mezcla de ambas
-  El piso de ruido más bajo del Azul favorece H1 o H3; la degradación de SNR en
-  notas pisadas (B_12 49.7 -> 35.9) favorece H3.
+  H1 - el desbalance de salida depende de la cuerda y del registro (pastillas,
+       altura respecto a cada cuerda, nuez de bronce en el Azul)
+  H2 - parte de la dispersión es error de estimación en las parejas con poco
+       soporte (D_12 tiene solo 6 observaciones de fundamental)
+  H3 - parte la absorbe mal la curva de timbre y reaparece como nivel
 
 Corrección propuesta:
-  1. Separar explícitamente `gain_de_sesion` de `gain_de_instrumento` en el modelo
-     y reportar que sólo la SUMA es identificable con los datos actuales.
-  2. Publicar el gain como intervalo con la advertencia de no identificabilidad.
-  3. Definir un `gain_operativo_recomendado` derivado de loudness/headroom, distinto
-     del valor científico.
-  4. Solicitar una toma de calibración (misma cadena, tono de referencia) para
-     resolver la ambigüedad.
+  1. Reportar el gain por cuerda y por registro además del escalar global.
+  2. Cerrar el bucle G/Q (ver P0-4): parte de la dispersión puede ser fuga.
+  3. Sensibilidad leave-one-pair-out del gain.
+  4. Distinguir gain_de_medicion / gain_perceptual / gain_operativo.
 
 Validación:
-  · Comparar d_floor esperado bajo H1 (piso escala con la ganancia) vs H2 (piso constante)
-  · Recalcular el gain excluyendo C_open y G_open (SNR ~6 dB)
-  · Reportar sensibilidad del gain al conjunto de parejas (leave-one-pair-out)
+  · Recalcular el gain excluyendo las parejas con SNR bajo (P0-3)
+  · Comparar la dispersión antes y después de cerrar el bucle G/Q
+  · Verificar si el gain por cuerda correlaciona con los offsets de cuerda que
+    el modelo ya estima (CORRELACION_EQ_OFFSETS_CUERDA.csv)
 
 Prioridad: P0
 ```
@@ -770,8 +804,9 @@ python3 modules/emulate_azul/code/build_v10_2.py
 
 | Área | Riesgo | Severidad |
 |---|---|---|
-| Gain | No identificable frente a la ganancia de sesión | **Alta** |
-| Gain | 11.25 dB de dispersión entre parejas | Alta |
+| Gain | ~~No identificable frente a la ganancia de sesión~~ **descartado 2026-07-31: es del instrumento** | — |
+| Gain | 11.25 dB de dispersión entre parejas | **Alta** |
+| Curva | Pico 2–4 kHz incierto en ±1.9 dB | **Alta** |
 | Graves | <28 Hz publicado como 0 dB sin medición | Alta |
 | Agudos | >15 kHz limitado por AAC ~100 kbps | Alta |
 | Datos | 2 tomas de Café con SNR ≈ 6 dB | Alta |
