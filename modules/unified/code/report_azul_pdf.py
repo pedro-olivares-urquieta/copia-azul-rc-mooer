@@ -126,6 +126,7 @@ def _holdout_from_results(out: Path, op: pd.DataFrame) -> float | None:
     """Prefer V20 resumen/ranking; fall back to older hold-out files."""
     # 1) Authoritative V20 summary written by improve_v20
     for name in (
+        "RESUMEN_V22.json",
         "RESUMEN_V21.json",
         "RESUMEN_V20.json",
         "RESUMEN_V19.json",
@@ -142,6 +143,8 @@ def _holdout_from_results(out: Path, op: pd.DataFrame) -> float | None:
     source = str(op.source_variant.iloc[0]) if "source_variant" in op.columns else ""
     air = str(op.air_policy.iloc[0]) if "air_policy" in op.columns else ""
     for rank_name in (
+        "FIDELIDAD_RANKING_AIRE_V22.csv",
+        "FIDELIDAD_RANKING_FORMA_V22.csv",
         "FIDELIDAD_RANKING_AIRE_V21.csv",
         "FIDELIDAD_RANKING_HOLDOUT_V21.csv",
         "FIDELIDAD_RANKING_AIRE_V20.csv",
@@ -538,7 +541,9 @@ def _plot_fidelity_copy(pdf: PdfPages, paths: RepoPaths, m, f_op, y_op, gain: fl
     rank_path = None
     rank_title = "5b. Ranking hold-out"
     for name, title in (
-        ("FIDELIDAD_RANKING_AIRE_V21.csv", "5b. Ranking aire V21 (operativa actual)"),
+        ("FIDELIDAD_RANKING_FORMA_V22.csv", "5b. Ranking forma agudos V22"),
+        ("FIDELIDAD_RANKING_AIRE_V22.csv", "5b. Ranking aire V22 (operativa actual)"),
+        ("FIDELIDAD_RANKING_AIRE_V21.csv", "5b. Ranking aire V21"),
         ("FIDELIDAD_RANKING_HOLDOUT_V21.csv", "5b. Ranking hold-out V21"),
         ("FIDELIDAD_RANKING_AIRE_V20.csv", "5b. Ranking aire V20"),
         ("FIDELIDAD_RANKING_HOLDOUT_V19.csv", "5b. Ranking hold-out V19 (base)"),

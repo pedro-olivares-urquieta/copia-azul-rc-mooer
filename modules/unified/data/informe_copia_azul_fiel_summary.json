@@ -1,12 +1,12 @@
 {
-  "pdf": "INFORME_COPIA_AZUL_FIEL_V21.pdf",
+  "pdf": "INFORME_COPIA_AZUL_FIEL_V22.pdf",
   "results_dir": "/workspace/modules/emulate_azul/_runs/det_v21/results",
-  "operative_variant": "v21_fretted_presence_robust+v21_hard_10k",
-  "operative_label": "V21.0 operativa · air v21_hard_10k",
-  "pipeline_version": "V21.0-operative",
-  "air_policy": "v21_hard_10k",
-  "gain_db": -12.903711407362223,
-  "holdout_rmse_db": 4.297617574826196,
+  "operative_variant": "v22_winsor_fretted_tight_floor+v22_hard_10k",
+  "operative_label": "V22.0 operativa · air v22_hard_10k",
+  "pipeline_version": "V22.0-operative",
+  "air_policy": "v22_hard_10k",
+  "gain_db": -12.938934507503346,
+  "holdout_rmse_db": 4.3331917334252115,
   "pages": [
     "cover_review",
     "cafe_azul_spectra",
@@ -20,5 +20,5 @@
     "rc_composition",
     "closing"
   ],
-  "generated_at_utc": "2026-07-31T10:58:01.061853+00:00"
+  "generated_at_utc": "2026-07-31T11:07:37.277628+00:00"
 }

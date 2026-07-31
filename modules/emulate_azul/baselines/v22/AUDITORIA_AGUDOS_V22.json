@@ -1,0 +1,29 @@
+{
+  "problem": "V21 fretted/presence curve cliff +5→−5 dB from 2.6–8 kHz; air snap 8→10k",
+  "cause": "Extreme fretted pair outliers after V21 re-extract; hold-out ignored shape",
+  "fix": "Winsorize ±8 dB in 1.5–10k, tighter robust weights, soft floor −0.5 in 4–8k, shape-aware race",
+  "v21": {
+    "eq_2k6": 5.769122989039871,
+    "eq_4k": -0.17986210317797066,
+    "eq_6k": -2.836862725802678,
+    "eq_8k": -4.966305728796933,
+    "eq_10k": -0.0018431033890201533,
+    "eq_15k": 0.0,
+    "cliff_2k6_8k_db": 10.735428717836804,
+    "min_4k8k_db": -4.966305728796933,
+    "air_step_8k_10k_db": 4.964462625407913,
+    "shape_bad": true
+  },
+  "v22": {
+    "eq_2k6": 2.945056771580228,
+    "eq_4k": 0.01418380732285361,
+    "eq_6k": -0.5000000416282441,
+    "eq_8k": -0.511018174996591,
+    "eq_10k": -0.001956755525274738,
+    "eq_15k": 0.0,
+    "cliff_2k6_8k_db": 3.456074946576819,
+    "min_4k8k_db": -0.511018174996591,
+    "air_step_8k_10k_db": 0.5090614194713162,
+    "shape_bad": false
+  }
+}
