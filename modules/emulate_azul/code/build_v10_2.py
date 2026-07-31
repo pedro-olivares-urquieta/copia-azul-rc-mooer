@@ -20,7 +20,7 @@ if not hasattr(np, 'trapz'):
 from repo_paths import ROOT, WAV, OUT, AUD, CODE, LEGACY, EXPORTS, AUDIO, ensure_runtime_dirs
 ensure_runtime_dirs()
 SR=44100; SEED=10202; RNG=np.random.default_rng(SEED)
-sys.path.insert(0,str(CODE)); import audio_utils_v7 as au
+sys.path.insert(0,str(CODE)); import audio_utils_v7 as au; import onsets; import run_config; import run_manifest
 PAIRS={p['key']:p for p in au.pairs}
 STRINGS=['B','E','A','D','G','C']; PHASES=['attack','stabilization','body','sustain','decay']
 PHASE_W={'attack':.08,'stabilization':.14,'body':.40,'sustain':.30,'decay':.08}
@@ -87,7 +87,7 @@ def interp_log(f,x,y): return np.interp(np.log(f),np.log(x),y)
 # ---------- event detection / matching ----------
 def onset_candidates(y,min_sep,expected_period):
     hop=128
-    oe=au.librosa.onset.onset_strength(y=y,sr=SR,hop_length=hop,n_fft=2048,aggregate=np.mean)
+    oe=onsets.onset_strength(y,SR,hop_length=hop,n_fft=2048,aggregate=np.mean)
     oe=signal.savgol_filter(oe,9,2,mode='interp') if len(oe)>10 else oe
     dist=max(1,int(min_sep*SR/hop)); prom=max(np.percentile(oe,70)*.18,1e-8)
     pk,_=signal.find_peaks(oe,distance=dist,prominence=prom)
@@ -190,7 +190,7 @@ def detect_chrom(y):
         scores.append(np.nanmedian(vv) if vv else -999)
     st=float(phases[int(np.argmax(scores))]);events=[]
     # local onset refinement ±35 ms and f0 confirmation
-    oe=au.librosa.onset.onset_strength(y=y,sr=SR,hop_length=64,n_fft=1024);ot=np.arange(len(oe))*64/SR
+    oe=onsets.onset_strength(y,SR,hop_length=64,n_fft=1024);ot=np.arange(len(oe))*64/SR
     for k,(fr,fe) in enumerate(zip(CH_FRETS,CH_FREQ)):
         tg=st+k*.3;m=(ot>=tg-.035)&(ot<=tg+.035);t=float(ot[m][np.argmax(oe[m])]) if m.any() else tg
         f,_=f0_refine(y,t,.3,fe);events.append(dict(time=t,f0=f,level=db(amp_sine(y[int((t+.055)*SR):int(min(len(y),(t+.24)*SR))],f)),expected=fe,fret=fr,index=k))
@@ -420,9 +420,16 @@ def eval_q(beta,f=DENSE_F):
 def predict_rows(beta,df,model='JOINT'):
     X=np.vstack([design(r,model) for r in df.to_dict('records')]);return X@beta
 
-CANDS=[(20,5,20,.7),(50,10,40,1),(100,20,80,1),(200,40,150,1.2),(400,80,300,1.5),(80,8,20,.7),(160,15,50,1),(300,30,100,1.3)]
+_LC,_LR,_CANDS_CFG=run_config.lambdas()
+CANDS=_CANDS_CFG or [(20,5,20,.7),(50,10,40,1),(100,20,80,1),(200,40,150,1.2),(400,80,300,1.5),(80,8,20,.7),(160,15,50,1),(300,30,100,1.3)]
 
 def cross_validate(obs):
+    """Score every lambda candidate; honour a fixed selection when configured.
+
+    The candidates' central_score differ by <0.08, so picking the argmin is not
+    reproducible across runs. `lambda_mode: fixed` keeps the CV table for
+    auditing but returns the configured value.
+    """
     pairs=sorted(set(o['pair'] for o in obs));rows=[]
     for ci,c in enumerate(CANDS):
         for hold in pairs:
@@ -437,8 +444,14 @@ def cross_validate(obs):
     ag['central_score']=ag.mae+.25*ag.rmse+.15*ag.sub_mae.fillna(0)
     ag['robust_score']=.45*ag.p90+.45*ag.p95+.10*ag.sub_mae.fillna(0)
     ic=int(ag.loc[ag.central_score.idxmin(),'candidate']);ir=int(ag.loc[ag.robust_score.idxmin(),'candidate'])
-    ag['selected_central']=ag.candidate==ic;ag['selected_robust']=ag.candidate==ir;ag.to_csv(OUT/'SELECCION_MODELOS_V10_2.csv',index=False)
-    return CANDS[ic],CANDS[ir],cv,ag
+    ag['cv_argmin_central']=ag.candidate==ic;ag['cv_argmin_robust']=ag.candidate==ir
+    lc=_LC if _LC is not None else CANDS[ic]
+    lr=_LR if _LR is not None else CANDS[ir]
+    ag['selected_central']=[tuple(c)==tuple(lc) for c in CANDS]
+    ag['selected_robust']=[tuple(c)==tuple(lr) for c in CANDS]
+    ag['lambda_mode']='fixed' if _LC is not None else 'cv'
+    ag.to_csv(OUT/'SELECCION_MODELOS_V10_2.csv',index=False)
+    return lc,lr,cv,ag
 
 # fixed old curves with nuisance refit using synthetic Q values
 def load_old_curve(kind):
@@ -647,6 +660,10 @@ def report_files(curve_df,beta_c,beta_r,central,robust,safe,param,no_sub,no_high
 # ---------- main ----------
 def main():
     t=time.time();all_obs=[];all_fund=[];matches=[];wins=[];att=[];gaps=[];traj=[];inventory=[]
+    run_id=os.environ.get('AZUL_RUN_ID') or time.strftime('%Y%m%dT%H%M%SZ',time.gmtime())
+    manifest=run_manifest.build(run_id,pipeline='emulate_azul',stages=['build_v10_2'])
+    run_manifest.write(manifest)
+    print('0/9 run_id',run_id,'config_hash',manifest['config_hash'][:16],flush=True)
     print('1/9 detect/match/extract originals',flush=True)
     for ii,(key,p) in enumerate(PAIRS.items(),1):
         yc,ya,ec,ea,ma,period=detect_and_match(key,p)
@@ -720,7 +737,8 @@ def main():
     print('7/9 render audio',flush=True)
     render_all([central,robust,safe,param,no_sub,no_high],bc,pd.DataFrame(matches))
     print('8/9 package',flush=True)
-    (CODE/'README.md').write_text('# V10.2 pipeline\n\nRun `python build_v10_2.py` from `modules/emulate_azul/code`. Inputs are normalized M4A under `audio/cafe_vs_azul` (decoded to `_cache/wav`). V9/V10.1 optional curves live in `legacy_curves/`.\n',encoding='utf-8');(CODE/'requirements.txt').write_text('numpy\npandas\nscipy\nsoundfile\nlibrosa\nmatplotlib\n',encoding='utf-8')
+    # NOTE: this used to rewrite code/requirements.txt on every run, silently
+    # dropping the pinned versions the run actually used.
     prompt=ROOT/'docs'/'PROMPT_MAESTRO_V10_2.md'
     if prompt.exists() and not (CODE/'PROMPT_MAESTRO_V10_2.md').exists():
         shutil.copy2(prompt,CODE/'PROMPT_MAESTRO_V10_2.md')
@@ -735,6 +753,9 @@ def main():
             for r in roots:
                 for p in r.rglob('*'):
                     if p.is_file():z.write(p,arcname=str(p.relative_to(ROOT)))
-    print('9/9 done',json.dumps({'elapsed_s':time.time()-t,'observations':len(obs),'matches':len(matches),'gain':bc[IG],'central':lc,'robust':lr,'files':len(inv)},indent=2),flush=True)
+    manifest.update(elapsed_s=time.time()-t,n_observations=len(obs),n_matches=len(matches),
+                    lambda_central=list(lc),lambda_robust=list(lr),model_intercept_db=float(bc[IG]))
+    run_manifest.finalize(manifest)
+    print('9/9 done',json.dumps({'run_id':run_id,'elapsed_s':time.time()-t,'observations':len(obs),'matches':len(matches),'gain':bc[IG],'central':lc,'robust':lr,'files':len(inv)},indent=2),flush=True)
 
 if __name__=='__main__':main()

@@ -1,0 +1,113 @@
+{
+  "run_a": "det_A",
+  "run_b": "det_B",
+  "curve": {
+    "rmse_db": 0.0,
+    "max_abs_db": 0.0,
+    "p95_abs_db": 0.0
+  },
+  "regions": [
+    {
+      "region": "20-60",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "60-250",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "250-1k",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "1k-2k",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "2k-4k",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "4k-8k",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    },
+    {
+      "region": "8k-20k",
+      "rmse_db": 0.0,
+      "max_abs_db": 0.0,
+      "mean_db": 0.0
+    }
+  ],
+  "gain": {
+    "gain_recommended_db": {
+      "a": -10.843424521321843,
+      "b": -10.843424521321843,
+      "delta": 0.0
+    },
+    "ci95_low_db": {
+      "a": -12.646206186227165,
+      "b": -12.646206186227165,
+      "delta": 0.0
+    },
+    "ci95_high_db": {
+      "a": -9.133774240069668,
+      "b": -9.133774240069668,
+      "delta": 0.0
+    },
+    "fundamental_only_median_db": {
+      "a": -11.511897201745692,
+      "b": -11.511897201745692,
+      "delta": 0.0
+    },
+    "energy_only_median_db": {
+      "a": -10.388371966301404,
+      "b": -10.388371966301404,
+      "delta": 0.0
+    },
+    "model_intercept_diagnostic_db": {
+      "a": -10.244620013961432,
+      "b": -10.244620013961432,
+      "delta": 0.0
+    }
+  },
+  "matching_events": {
+    "a": 927,
+    "b": 927,
+    "delta": 0
+  },
+  "manifest_a": {
+    "run_id": "det_A",
+    "git_commit": "84814ff8ed7dbe580eab2986b2eafc472a7bc34a",
+    "config_hash": "b4665285751a4a900b0041f86c5d659a5121f92d03c428e53a826c3d6085f83e",
+    "input_audio_hash": "cabddce87ef921f215b3d19a68f6aceded8746f0b5d53c4320a34de57cc76d38",
+    "output_hash": "2e8c95a9b23eb509dbda2ecf5dd9c9928c0f62e08d330ae710ab7b21fca77dba"
+  },
+  "manifest_b": {
+    "run_id": "det_B",
+    "git_commit": "84814ff8ed7dbe580eab2986b2eafc472a7bc34a",
+    "config_hash": "b4665285751a4a900b0041f86c5d659a5121f92d03c428e53a826c3d6085f83e",
+    "input_audio_hash": "cabddce87ef921f215b3d19a68f6aceded8746f0b5d53c4320a34de57cc76d38",
+    "output_hash": "69e3e383c3d306e4fd48ecb5133711075e8ec0e4872959e15693bd157822ff15"
+  },
+  "outputs": {
+    "compared": 54,
+    "identical": 54,
+    "differing": [],
+    "only_in_a": [],
+    "only_in_b": []
+  },
+  "bit_identical_outputs": true,
+  "deterministic_curve": true
+}

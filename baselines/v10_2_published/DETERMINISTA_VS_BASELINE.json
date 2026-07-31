@@ -1,0 +1,159 @@
+{
+  "run_a": "__baseline__",
+  "run_b": "det_A",
+  "curve": {
+    "rmse_db": 0.6551662231392354,
+    "max_abs_db": 1.9369794121905572,
+    "p95_abs_db": 1.7394695196232794
+  },
+  "regions": [
+    {
+      "region": "20-60",
+      "rmse_db": 0.026070770765118642,
+      "max_abs_db": 0.0707584716882097,
+      "mean_db": 0.016540378468290984
+    },
+    {
+      "region": "60-250",
+      "rmse_db": 0.3351392341073097,
+      "max_abs_db": 0.562825023614649,
+      "mean_db": 0.2932143165393982
+    },
+    {
+      "region": "250-1k",
+      "rmse_db": 0.5100069426703188,
+      "max_abs_db": 0.8246169516542446,
+      "mean_db": 0.4424724229768769
+    },
+    {
+      "region": "1k-2k",
+      "rmse_db": 0.9393684129952727,
+      "max_abs_db": 1.6228414759762577,
+      "mean_db": -0.7582242157069017
+    },
+    {
+      "region": "2k-4k",
+      "rmse_db": 1.6193016641471656,
+      "max_abs_db": 1.9369794121905572,
+      "mean_db": -1.5703892998007765
+    },
+    {
+      "region": "4k-8k",
+      "rmse_db": 0.15127102089584127,
+      "max_abs_db": 0.5477842175384943,
+      "mean_db": -0.03430837674902514
+    },
+    {
+      "region": "8k-20k",
+      "rmse_db": 0.004907660672733106,
+      "max_abs_db": 0.0103034188093698,
+      "mean_db": -0.0029937961828189223
+    }
+  ],
+  "gain": {
+    "gain_recommended_db": {
+      "a": -10.5914945497307,
+      "b": -10.843424521321843,
+      "delta": -0.25192997159114405
+    },
+    "ci95_low_db": {
+      "a": -11.801543301894126,
+      "b": -12.646206186227165,
+      "delta": -0.8446628843330384
+    },
+    "ci95_high_db": {
+      "a": -8.358111158156872,
+      "b": -9.133774240069668,
+      "delta": -0.7756630819127963
+    },
+    "fundamental_only_median_db": {
+      "a": -11.520956240194296,
+      "b": -11.511897201745692,
+      "delta": 0.009059038448604895
+    },
+    "energy_only_median_db": {
+      "a": -9.674261461963852,
+      "b": -10.388371966301404,
+      "delta": -0.7141105043375529
+    },
+    "model_intercept_diagnostic_db": {
+      "a": -9.936611583741511,
+      "b": -10.244620013961432,
+      "delta": -0.3080084302199211
+    }
+  },
+  "matching_events": {
+    "a": 873,
+    "b": 927,
+    "delta": 54
+  },
+  "manifest_b": {
+    "run_id": "det_A",
+    "git_commit": "84814ff8ed7dbe580eab2986b2eafc472a7bc34a",
+    "config_hash": "b4665285751a4a900b0041f86c5d659a5121f92d03c428e53a826c3d6085f83e",
+    "input_audio_hash": "cabddce87ef921f215b3d19a68f6aceded8746f0b5d53c4320a34de57cc76d38",
+    "output_hash": "2e8c95a9b23eb509dbda2ecf5dd9c9928c0f62e08d330ae710ab7b21fca77dba"
+  },
+  "outputs": {
+    "compared": 54,
+    "identical": 7,
+    "differing": [
+      "01_CURVAS_PRINCIPALES.png",
+      "02_CURVA_20_120_LINEAR.png",
+      "03_CURVA_2_12KHZ.png",
+      "04_SOPORTE.png",
+      "05_MAPA_ATAQUES.png",
+      "06_MATCHING_COSTOS.png",
+      "07_CICLOS_POR_FRECUENCIA.png",
+      "08_METRICAS_MODELOS.png",
+      "09_CURVAS_POR_FASE.png",
+      "ATAQUES_MULTIESCALA_V10_2.csv",
+      "AUDITORIA_800_1600_HZ.csv",
+      "BOOTSTRAP_PAREADO_V9_V10_1_V10_2.csv",
+      "COMPARACION_FREQUENCY_STRING_JOINT.csv",
+      "CORRELACION_EQ_OFFSETS_CUERDA.csv",
+      "CURVAS_DENSAS_V10_2.csv",
+      "CURVA_20_120_HZ_V10_2.csv",
+      "ESPACIOS_Y_SOLAPAMIENTOS_V10_2.csv",
+      "FRONTERA_PARETO_CENTRAL_ROBUST.csv",
+      "FUNDAMENTALES_CORREGIDAS_V10_2.csv",
+      "GAIN_GLOBAL_V10_2.csv",
+      "GAIN_POR_PAREJA_Y_FUENTE_V10_2.csv",
+      "HASHES_WAV_ORIGINALES.csv",
+      "INFORME_COMPARACION_V9_V10_1_V10_2.md",
+      "INFORME_IDENTIFICABILIDAD.md",
+      "INFORME_SIGNIFICANCIA_PRACTICA.md",
+      "INFORME_TECNICO_AUTONOMO_V10_2.md",
+      "INFORME_VALIDACION.md",
+      "INVENTARIO_ENTREGABLES_V10_2.csv",
+      "MAPA_TIEMPO_FRECUENCIA_DIFERENCIAL.csv",
+      "MATCHING_BANDAS_V10_2.csv",
+      "MATCHING_EVENTOS_V10_2.csv",
+      "MATRIZ_IDENTIFICABILIDAD_CUERDA_FRECUENCIA.csv",
+      "METRICAS_LOCALES_Y_TEMPORALES_V10_2.csv",
+      "METRICAS_POR_PAREJA_V10_2.csv",
+      "PRESET_PARAMETRICO_V10_2.csv",
+      "QUE_CONTIENEN_REALMENTE_LOS_AUDIOS_V10_2.csv",
+      "RENDER_INVENTORY_V10_2.csv",
+      "SELECCION_MODELOS_V10_2.csv",
+      "SIGNIFICANCIA_PRECISE_VS_ABLACIONES.csv",
+      "SIGNIFICANCIA_PRECISE_VS_NO_HIGH.csv",
+      "SIGNIFICANCIA_PRECISE_VS_NO_SUB.csv",
+      "TONAL_HARMONICS_CORRECTED_V10_2.csv",
+      "TRAYECTORIAS_ARMONICAS_V10_2.csv",
+      "TRAYECTORIAS_FUNDAMENTALES_V10_2.csv",
+      "VALIDACION_CANDIDATOS_V10_2.csv",
+      "VENTANAS_ADAPTATIVAS_V10_2.csv",
+      "repair_preview.npz"
+    ],
+    "only_in_a": [
+      "10_COMPARACION_V9_V10_1_V10_2.png",
+      "11_GAIN_POR_PAREJA_Y_FUENTE.png",
+      "COMPARACION_MODELOS_MISMO_PIPELINE.csv",
+      "PUNTOS_RESUMIDOS_V10_2.csv"
+    ],
+    "only_in_b": []
+  },
+  "bit_identical_outputs": false,
+  "deterministic_curve": false
+}
