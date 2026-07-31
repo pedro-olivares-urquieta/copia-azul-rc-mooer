@@ -34,7 +34,8 @@ import improve_v15 as v15  # noqa: E402
 import improve_v16 as v16  # noqa: E402
 import run_manifest  # noqa: E402
 
-LOCAL_OCT = 1.0 / 12.0
+# Match V15 localization (1/10 oct); 1/12 was slightly worse for fidelity.
+LOCAL_OCT = 1.0 / 10.0
 CALIB_PAIRS = v16.CALIB_PAIRS
 HOLD_PAIRS = v16.HOLD_PAIRS
 ALL_TEST = [
@@ -170,22 +171,30 @@ def main() -> None:
     global_scalar = float(pair_gains.gain_scalar_db.median())
     print(f"1 scalar median {global_scalar:+.3f} dB", flush=True)
 
-    print("2 observations + phase repetibility", flush=True)
-    obs = v16.demeaned_observations(g12, pair_gains)
-    obs = phase_repeatability_weights(obs)
+    print("2 observations (demeaned + V15-style) + phase repetibility", flush=True)
+    obs_demean = phase_repeatability_weights(
+        v16.demeaned_observations(g12, pair_gains)
+    )
+    # Same enrich path as V15 (global gain only) — historically better for copy.
+    obs_v15 = phase_repeatability_weights(v15.enrich_observations(g12))
     pair_w = pair_alignment_weights()
     pair_w.to_csv(OUT / "PESOS_PAREJA_ALINEACION_V17.csv", index=False)
     print(pair_w.sort_values("pair_weight").round(3).to_string(index=False), flush=True)
 
     print("3 unsmoothed aggregators", flush=True)
-    variants_pair = aggregate_variants(obs, pair_w)
+    variants_pair = {}
+    for prefix, obs in (("dm", obs_demean), ("v15w", obs_v15)):
+        for name, curve_p in aggregate_variants(obs, pair_w).items():
+            variants_pair[f"{prefix}_{name}"] = curve_p
 
     # Calibrate each on CALIB; score on HOLD.
     results = []
     dense_store = {}
     for name, curve_p in variants_pair.items():
         dense, eff = to_dense_neutral(curve_p)
-        gain0 = global_scalar + eff
+        # V15-style obs already demeaned by global g12 inside enrich; residual
+        # energy effect rides on g12. Demeaned path uses per-pair scalar median.
+        gain0 = (global_scalar if name.startswith("dm_") else g12) + eff
         dense_cal, scale, gain_cal = v15.calibrate_presence_scale(
             dense, gain0, CALIB_PAIRS
         )
@@ -210,20 +219,32 @@ def main() -> None:
             flush=True,
         )
 
-    # Baselines
+    # Baselines — fair hold-out: re-calibrate V15 detail on CALIB_PAIRS only.
+    # (Published V15 calibrated on G_12/C_24 too, which overlap HOLD_PAIRS.)
     v12c = pd.read_csv(OUT / "CURVAS_DENSAS_V12.csv")
     c12 = np.interp(np.log(m.DENSE_F), np.log(v12c.frequency_hz), v12c.energy_neutral_db)
     v15c = pd.read_csv(OUT / "CURVAS_DENSAS_V15_FIEL.csv")
-    c15 = np.interp(np.log(m.DENSE_F), np.log(v15c.frequency_hz), v15c.eq_faithful_db)
-    g15 = float(json.loads((OUT / "RESUMEN_V15.json").read_text())["gain_faithful_db"])
+    c15_pub = np.interp(np.log(m.DENSE_F), np.log(v15c.frequency_hz), v15c.eq_faithful_db)
+    g15_pub = float(json.loads((OUT / "RESUMEN_V15.json").read_text())["gain_faithful_db"])
+    detail15 = np.interp(
+        np.log(m.DENSE_F), np.log(v15c.frequency_hz), v15c.eq_observed_detail_db
+    )
+    g15_detail = float(
+        json.loads((OUT / "RESUMEN_V15.json").read_text()).get(
+            "gain_observed_detail_db", g15_pub
+        )
+    )
+    c15, s15, g15 = v15.calibrate_presence_scale(detail15, g15_detail, CALIB_PAIRS)
+    dense_store["v15_recal"] = (detail15, c15, g15, s15)
     v16c = pd.read_csv(OUT / "CURVAS_DENSAS_V16_FIEL.csv")
     c16 = np.interp(np.log(m.DENSE_F), np.log(v16c.frequency_hz), v16c.eq_faithful_db)
     g16 = float(json.loads((OUT / "RESUMEN_V16.json").read_text())["gain_faithful_db"])
 
-    for label, curve_d, g in (
-        ("v12_energy_neutral", c12, g12),
-        ("v15_faithful", c15, g15),
-        ("v16_faithful", c16, g16),
+    for label, curve_d, g, scale in (
+        ("v12_energy_neutral", c12, g12, np.nan),
+        ("v15_faithful_recal", c15, g15, s15),
+        ("v15_faithful_published", c15_pub, g15_pub, np.nan),
+        ("v16_faithful", c16, g16, np.nan),
     ):
         hold = v15.fidelity_audit(curve_d, g, label, pairs=HOLD_PAIRS)
         crit = hold[hold.band.isin(["500-1k", "1k-2k", "2k-4k", "4k-8k"])]
@@ -232,27 +253,44 @@ def main() -> None:
                 "variant": label,
                 "holdout_critical_rmse_db": float(crit.rmse_db.median()),
                 "bias_2k4k_db": float(hold.loc[hold.band == "2k-4k", "bias_db"].median()),
-                "presence_scale": np.nan,
+                "presence_scale": scale,
                 "gain_db": g,
             }
         )
 
-    ranking = pd.DataFrame(results).sort_values("holdout_critical_rmse_db")
+    ranking = pd.DataFrame(results)
+    # Primary: hold-out RMSE. Near-ties (≤0.05 dB): prefer flatter 2–4 kHz bias.
+    ranking["abs_bias_2k4k"] = ranking.bias_2k4k_db.abs()
+    ranking = ranking.sort_values(
+        ["holdout_critical_rmse_db", "abs_bias_2k4k"]
+    ).reset_index(drop=True)
     ranking.to_csv(OUT / "FIDELIDAD_RANKING_HOLDOUT_V17.csv", index=False)
     print(ranking.round(3).to_string(index=False), flush=True)
 
-    best = ranking.iloc[0]
+    # Operative winner ignores published V15 (calibrated on HOLD pairs).
+    fair = ranking[~ranking.variant.astype(str).str.contains("published")].copy()
+    # Within 0.05 dB of the best fair RMSE, pick lowest |2–4 kHz bias|.
+    best_rmse = float(fair.holdout_critical_rmse_db.min())
+    near = fair[fair.holdout_critical_rmse_db <= best_rmse + 0.05]
+    best = near.sort_values(["abs_bias_2k4k", "holdout_critical_rmse_db"]).iloc[0]
     best_name = str(best.variant)
-    print(f"4 winner: {best_name}", flush=True)
+    print(
+        f"4 winner (fair hold-out, presence-aware): {best_name} "
+        f"RMSE={best.holdout_critical_rmse_db:.3f} "
+        f"bias2k4k={best.bias_2k4k_db:+.3f}",
+        flush=True,
+    )
 
-    # Resolve operative curve.
+    # Resolve operative curve (fair hold-out winner; published V15 only if it wins).
     if best_name.startswith("v17_"):
         key = best_name.replace("v17_", "")
         op_curve, op_gain = dense_store[key][1], dense_store[key][2]
         op_scale = dense_store[key][3]
         detail = dense_store[key][0]
-    elif best_name == "v15_faithful":
-        op_curve, op_gain, op_scale, detail = c15, g15, np.nan, c15
+    elif best_name in ("v15_faithful_recal", "v15_recal"):
+        op_curve, op_gain, op_scale, detail = c15, g15, s15, detail15
+    elif best_name == "v15_faithful_published":
+        op_curve, op_gain, op_scale, detail = c15_pub, g15_pub, np.nan, c15_pub
     elif best_name == "v16_faithful":
         op_curve, op_gain, op_scale, detail = c16, g16, np.nan, c16
     else:
@@ -312,7 +350,8 @@ def main() -> None:
     audits = []
     for label, curve_d, g in (
         ("operative", op_curve, op_gain),
-        ("v15_faithful", c15, g15),
+        ("v15_faithful_recal", c15, g15),
+        ("v15_faithful_published", c15_pub, g15_pub),
         ("v16_faithful", c16, g16),
         ("v12_energy_neutral", c12, g12),
     ):
@@ -335,7 +374,10 @@ def main() -> None:
             {
                 "frequency_hz": hz,
                 "operative_db": float(np.interp(np.log(hz), np.log(m.DENSE_F), op_curve)),
-                "v15_db": float(np.interp(np.log(hz), np.log(m.DENSE_F), c15)),
+                "v15_recal_db": float(np.interp(np.log(hz), np.log(m.DENSE_F), c15)),
+                "v15_published_db": float(
+                    np.interp(np.log(hz), np.log(m.DENSE_F), c15_pub)
+                ),
                 "v16_db": float(np.interp(np.log(hz), np.log(m.DENSE_F), c16)),
                 "v12_db": float(np.interp(np.log(hz), np.log(m.DENSE_F), c12)),
                 "v41_db": theirs,

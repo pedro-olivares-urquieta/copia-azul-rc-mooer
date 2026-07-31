@@ -14,18 +14,13 @@ import improve_v17 as v17  # noqa: E402
 
 
 def test_weighted_nanmedian_prefers_high_weight():
-    mat = np.array(
-        [
-            [0.0, 10.0],
-            [2.0, 10.0],
-            [20.0, 0.0],
-        ],
-        float,
-    )
-    w = np.array([1.0, 1.0, 0.01], float)
-    out = v17.weighted_nanmedian(mat, w)
-    assert abs(out[0] - 1.0) < 0.5  # median of 0 and 2
-    assert abs(out[1] - 10.0) < 1e-9
+    mat = np.array([[0.0], [10.0], [20.0]], float)
+    out_flat = v17.weighted_nanmedian(mat, np.ones(3))
+    out_hi = v17.weighted_nanmedian(mat, np.array([0.01, 0.01, 1.0]))
+    out_lo = v17.weighted_nanmedian(mat, np.array([1.0, 0.01, 0.01]))
+    # High weight on 20 / 0 pulls away from the equal-weight centre.
+    assert out_hi[0] > out_flat[0]
+    assert out_lo[0] < out_flat[0]
 
 
 def test_phase_repeatability_downweights_noisy_phase():

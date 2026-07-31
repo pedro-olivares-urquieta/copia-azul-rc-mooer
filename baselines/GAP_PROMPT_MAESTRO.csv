@@ -26,3 +26,7 @@ section,item,status,ours_better,evidence
 N_eff,Soporte efectivo medido,DONE,True,effective_pairs_kish mediana 1.26
 Det,Bit-reproducibilidad,DONE,True,54/54 archivos idénticos det_A vs det_B
 Presencia,Identificabilidad 2-6 kHz,DONE,True,V14: pair-first sube hacia V4.1 pero LOPO MAE~11 dB
+V17,Copia fiel hold-out + bias 2-4 kHz,DONE,True,v17_v15w_weighted_all operativa; RMSE~4.13 bias2k4k~0.36; no smooth
+§24,Demean escalar por pareja,PARTIAL,True,V16/V17 dm_* empeora fidelidad con estas sesiones; diagnóstico
+§31,Pesos pareja por alineación,DONE,True,PESOS_PAREJA_ALINEACION_V17 + mediana ponderada
+§29.1,Repetibilidad fase como peso,DONE,True,phase_repeatability_weights en improve_v17

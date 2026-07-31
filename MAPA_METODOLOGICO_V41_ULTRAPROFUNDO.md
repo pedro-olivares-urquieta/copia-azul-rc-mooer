@@ -1,9 +1,9 @@
 # Mapa metodológico: informe V4.1 ultraprofundo ↔ nuestro pipeline
 
 **Fecha:** 2026-07-31  
-**Nuestro stack:** V10.2 → V11 → V12 → V13 → V14 → **V15 (fidelidad sin suavizar)**  
+**Nuestro stack:** V10.2 → V11 → V12 → V13 → V14 → V15 → V16 → **V17 (copia operativa)**  
 **Referencia:** informe metodológico ultraprofundo Café→Azul (V4.1, 912 pts, PSD Hann)  
-**Entregable de copia:** `eq_faithful_db` (V15) — ver `FIDELIDAD_SIN_SUAVIZAR.md`
+**Entregable de copia:** `CURVA_COPIA_OPERATIVA.csv` (V17: V15-weights + pair confidence) — ver `FIDELIDAD_SIN_SUAVIZAR.md`
 
 Regla de oro: **no adoptar como “mejora” algo que ya hacemos mejor**, ni reescribir la ciencia de `build_v10_2` de un golpe. Lo adoptado entra como post-proceso trazable (`improve_v12`…`v14`).
 
@@ -131,7 +131,28 @@ Por eso:
 
 ---
 
-## 7. Cómo reproducir V14
+## 7. V17 — copia operativa sin suavizar
+
+Carrera hold-out de agregadores **sin** kernel de octavas:
+
+| Idea V4.1 / propia | Uso en V17 |
+|---|---|
+| §31 pesos de pareja | `PESOS_PAREJA_ALINEACION_V17.csv` → mediana ponderada |
+| §29.1 repetibilidad fase | multiplica `w` por `exp(−MAD/4.5)` |
+| Open >300 Hz | fretted-primary (variante de carrera) |
+| §24 demean por pareja | probado (`dm_*`); **empeora** copia → no operativa |
+| Presence scale | escala >500 Hz calibrada en CALIB; score en HOLD |
+
+**Ganador operativo:** `v17_v15w_weighted_all` (RMSE hold ≈ 4.13 dB, bias 2–4 kHz ≈ +0.36 dB; gain ≈ −11.99 dB).  
+Unified: `--variant faithful`. Detalle: `FIDELIDAD_SIN_SUAVIZAR.md`.
+
+```bash
+AZUL_OUT_DIR=modules/emulate_azul/_runs/det_A/results \
+AZUL_RENDERS_DIR=modules/emulate_azul/_runs/det_A/renders \
+python3 modules/emulate_azul/code/improve_v17.py
+```
+
+## 8. Cómo reproducir V14 (diagnóstico)
 
 ```bash
 AZUL_OUT_DIR=modules/emulate_azul/_runs/<run>/results \
