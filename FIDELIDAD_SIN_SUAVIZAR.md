@@ -37,26 +37,29 @@ eq_smooth_diagnostic   → NO implementar
 - Contracción `EQ × reliability` hacia 0 dB  
 - Heurísticas físicas fijas B–E–A  
 
-## Resultado operativo (V19 presencia robusta)
+## Resultado operativo (V19 presencia + V20 aire)
 
 La métrica de verdad es el **error espectral Café+EQ+gain vs Azul** en bandas críticas (0.5–8 kHz), no el parecido visual a los puntos V4.1.
 
 Hold-out crítico (CALIB=`A_12,C_12,E_12,C_chromatic` / HOLD=`B_12,D_12,G_12,C_24`):
 
-| Variante | RMSE hold | bias 2–4 kHz |
-|---|---:|---:|
-| **v19_presence_robust (operativa)** | **4.100** | **+0.056** |
-| v17_v15w_weighted_all | 4.132 | +0.36 |
-| v15_faithful_recal | 4.131 | +0.69 |
-| v16_faithful | 4.320 | +0.78 |
-| V18 phase-first / event-conf | ≥4.57 | — |
-| v12_energy_neutral | 5.386 | −1.14 |
+| Variante | RMSE hold | bias 2–4 kHz | 15 kHz |
+|---|---:|---:|---:|
+| **V19+`v20_hard_10k` (operativa)** | **4.100** | **+0.056** | **0.0** |
+| V19 sin taper aire | 4.100 | +0.056 | +3.77 |
+| v17_v15w_weighted_all | 4.132 | +0.36 | ~+4.4 |
+| v12_energy_neutral | 5.386 | −1.14 | ~+1 |
 
-**Operativa:** `v19_presence_robust` — misma base V15/V17 + **pesos robustos en 1.5–6.5 kHz** (baja E_12/B_12 que inflaban presencia); `presence_scale≈0.32`; gain ≈ **−12.01 dB**.
+**Operativa:** presencia robusta V19 + **aire → 0 dB sobre 10 kHz** (fade 8–10 kHz). Gain ≈ **−12.01 dB**.  
+Detalle: `ANALISIS_PRESENCIA_BRILLO_AIRE_V41.md`.
 
 ### Por qué la presencia “se sentía débil”
 
-No era un EQ globalmente bajo: el bias mediano tras V17 ya era ~0 dB. El problema era **desacuerdo entre parejas** (E_12/B_12 muy brillantes, C_24/D_12 opacos). La escala global 0.38 aplastaba a todos por culpa de los outliers. V19 baja el peso de esos outliers solo en presencia.
+No era un EQ globalmente bajo: el bias mediano tras V17 ya era ~0 dB. El problema era **desacuerdo entre parejas** (E_12/B_12 muy brillantes, C_24/D_12 opacos). V19 baja outliers en 1.5–6.5 kHz.
+
+### 15–18 kHz: sí nos pasamos
+
+`presence_scale` ≥500 Hz dejaba +3.7 dB hasta 18 kHz. V4.1 lo trata como diagnóstico (AAC→0). V20 lo corrige **sin** suavizar presencia.
 
 ### V18 — qué se probó y qué no mejoró la copia
 

@@ -1,0 +1,15 @@
+{
+  "v41_air_policy": {
+    "10_18_khz": "diagnostic; attack 80%/sustain 20%; AAC prior→0.08; smooth ~1/2 oct; EQ×reliability→0",
+    "evidence_to": "~15.3 kHz at reliability≥0.15; ~9.8 kHz at ≥0.35"
+  },
+  "ours_before_v20": {
+    "problem": "presence_scale≥500Hz left +3.7…+4.5 dB through 18 kHz",
+    "better": "DPSS, F0 refine, acoustic match, render metric, no blind smooth",
+    "already_had": "AAC prior in observation weights; phase mix 64/36 and 80/20; open>300 excluded"
+  },
+  "adopted_v20": {
+    "what": "air taper toward 0 using AAC prior / soft fade — NOT presence smooth, NOT full reliability shrink on 0.5–8k",
+    "winner": "v20_hard_10k"
+  }
+}

@@ -1,7 +1,7 @@
 {
   "pdf": "/workspace/INFORME_COPIA_AZUL_FIEL.pdf",
   "results_dir": "/workspace/modules/emulate_azul/_runs/det_A/results",
-  "operative_variant": "v19_presence_robust",
+  "operative_variant": "v19_presence_robust+v20_hard_10k",
   "gain_db": -12.011933081005813,
   "holdout_rmse_db": 4.100028878623228,
   "pages": [
@@ -17,5 +17,5 @@
     "rc_composition",
     "closing"
   ],
-  "generated_at_utc": "2026-07-31T08:59:44.045463+00:00"
+  "generated_at_utc": "2026-07-31T09:15:28.246548+00:00"
 }
