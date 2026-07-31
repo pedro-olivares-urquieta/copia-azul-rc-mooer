@@ -188,7 +188,7 @@ def cmd_informe(args: argparse.Namespace) -> int:
         out = (
             Path(args.output)
             if args.output and mode == "mooer"
-            else paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER.pdf"
+            else paths.repo / "INFORME_ORQUESTADOR_AZUL_RC_MOOER_V22.pdf"
         )
         summary = generate_report(
             out,
@@ -196,6 +196,7 @@ def cmd_informe(args: argparse.Namespace) -> int:
             random_starts=args.random_starts,
             seed=args.seed,
             paths=paths,
+            azul_variant=getattr(args, "variant", "faithful") or "faithful",
         )
         print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0
@@ -362,6 +363,12 @@ def main(argv: list[str] | None = None) -> int:
         "-o",
         default=None,
         help="PDF path (default depends on --mode)",
+    )
+    inf.add_argument(
+        "--variant",
+        default="faithful",
+        choices=["central", "robust", "safe", "parametric", "total", "faithful", "copy", "operative"],
+        help="Azul curve for mooer mode (default: faithful = V22 operativa)",
     )
     inf.add_argument("--de-seeds", type=int, default=12)
     inf.add_argument("--random-starts", type=int, default=2500)

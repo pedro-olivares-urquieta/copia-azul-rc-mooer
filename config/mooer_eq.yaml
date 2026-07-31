@@ -16,6 +16,7 @@ model:
   q_gain_slope: -0.0026
 provenance: modules/mooer_eq/data/CALIBRATION_PROVENANCE.json
 config_json: modules/mooer_eq/config/config.json
-# Do not regenerate Azul+RC presets until the 2–4 kHz Café→Azul region is firmer.
-lock_regenerate_presets: true
+# V22 repaired presence cliff; regenerate Azul+RC presets from faithful operative.
+lock_regenerate_presets: false
 locked_band_18000_db: -16.0
+azul_variant: faithful
