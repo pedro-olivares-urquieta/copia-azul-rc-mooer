@@ -15,6 +15,12 @@
     ],
     "q_display": 0.3,
     "global_gain_db": 3.0,
+    "global_gain_range_db": [
+      -60,
+      3
+    ],
+    "global_gain_step_db": 0.5,
+    "global_gain_mapping": "1to1",
     "gain_range_db": [
       -16,
       16
@@ -22,7 +28,8 @@
     "gain_step_db": 0.5,
     "gain_effective_coefficient": 0.75,
     "q_base_coefficient": 0.569,
-    "q_gain_slope": -0.0026
+    "q_gain_slope": -0.0026,
+    "calibration_provenance": "data/CALIBRATION_PROVENANCE.json"
   },
   "calibration_uncertainty_scenario_not_measured": {
     "gain_coefficient_sd": 0.015,

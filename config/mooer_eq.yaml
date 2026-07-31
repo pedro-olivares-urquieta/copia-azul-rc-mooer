@@ -1,0 +1,21 @@
+# Mooer GE300 model locks and calibration pointers.
+# Numeric constants live in modules/mooer_eq/config/config.json;
+# this YAML is the repo-level entry point for the orchestrator.
+seed: 20260730
+model:
+  frequencies_hz: [30, 148, 735, 3637, 18000]
+  q_display: 0.3
+  global_gain_db: 3.0
+  global_gain_range_db: [-60, 3]
+  global_gain_step_db: 0.5
+  global_gain_mapping: "1to1"
+  band_gain_range_db: [-16, 16]
+  band_gain_step_db: 0.5
+  gain_coeff: 0.75
+  q_base: 0.569
+  q_gain_slope: -0.0026
+provenance: modules/mooer_eq/data/CALIBRATION_PROVENANCE.json
+config_json: modules/mooer_eq/config/config.json
+# Do not regenerate Azul+RC presets until the 2–4 kHz Café→Azul region is firmer.
+lock_regenerate_presets: true
+locked_band_18000_db: -16.0

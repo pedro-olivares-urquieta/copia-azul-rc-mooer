@@ -1,0 +1,6 @@
+phase,n_observations,n_pairs,median_snr_db,fraction_finite_curve
+attack,5159,14,33.65964156019922,1.0
+stabilization,4705,14,35.139049948985026,1.0
+body,4534,14,35.74256649658523,1.0
+sustain,4058,14,33.1878700162287,1.0
+decay,3709,14,32.63832003642595,1.0
