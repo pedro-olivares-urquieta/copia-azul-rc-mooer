@@ -1,13 +1,14 @@
 """Artifact loaders and validators for emulate_azul (CSV-first, no heavy DSP)."""
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from repo_paths import OUT, AUDIO, MANIFEST, LEGACY
+from repo_paths import OUT, AUDIO, MANIFEST, LEGACY, MODULE
 
 
 REQUIRED = [
@@ -19,6 +20,8 @@ REQUIRED = [
     "CONFIG_V10_2.json",
 ]
 
+FAITHFUL_VARIANTS = frozenset({"faithful", "copy", "operative"})
+
 
 @dataclass
 class AzulTransferCurve:
@@ -29,6 +32,7 @@ class AzulTransferCurve:
     parametric_db: np.ndarray
     total_central_with_gain_db: np.ndarray | None
     support_state: np.ndarray | None
+    faithful_db: np.ndarray | None = None
 
     def interpolate(self, freqs: np.ndarray, variant: str = "central") -> np.ndarray:
         mapping = {
@@ -39,18 +43,64 @@ class AzulTransferCurve:
             "total": self.total_central_with_gain_db
             if self.total_central_with_gain_db is not None
             else self.central_db,
+            "faithful": self.faithful_db
+            if self.faithful_db is not None
+            else self.central_db,
+            "copy": self.faithful_db
+            if self.faithful_db is not None
+            else self.central_db,
+            "operative": self.faithful_db
+            if self.faithful_db is not None
+            else self.central_db,
         }
         if variant not in mapping:
             raise ValueError(f"Unknown variant {variant}; choose from {sorted(mapping)}")
         y = mapping[variant]
+        if y is None:
+            raise ValueError(f"Variant {variant} has no curve data in this results dir")
         return np.interp(np.log(freqs), np.log(self.frequency_hz), y)
 
 
-def load_curve(results_dir: Path = OUT) -> AzulTransferCurve:
+def resolve_results_dir(results_dir: Path | None = None) -> Path:
+    """Prefer explicit/env OUT; fall back to det_A when it holds the operative copy."""
+    import os
+
+    if results_dir is not None:
+        return Path(results_dir)
+    if os.environ.get("AZUL_OUT_DIR"):
+        return OUT
+    if (OUT / "CURVA_COPIA_OPERATIVA.csv").exists():
+        return OUT
+    det_a = MODULE / "_runs" / "det_A" / "results"
+    if (det_a / "CURVA_COPIA_OPERATIVA.csv").exists():
+        return det_a
+    return OUT
+
+
+def load_curve(results_dir: Path | None = None) -> AzulTransferCurve:
+    results_dir = resolve_results_dir(results_dir)
+    # Published V10.2 baseline always readable for structural variants.
+    baseline = MODULE / "results"
     path = results_dir / "CURVAS_DENSAS_V10_2.csv"
+    if not path.exists():
+        path = baseline / "CURVAS_DENSAS_V10_2.csv"
     df = pd.read_csv(path)
     total = df["total_central_with_gain_db"].to_numpy() if "total_central_with_gain_db" in df else None
     support = df["support_state"].to_numpy() if "support_state" in df else None
+
+    faithful = None
+    op = results_dir / "CURVA_COPIA_OPERATIVA.csv"
+    if not op.exists():
+        op = MODULE / "_runs" / "det_A" / "results" / "CURVA_COPIA_OPERATIVA.csv"
+    if op.exists():
+        op_df = pd.read_csv(op)
+        col = "eq_copy_db" if "eq_copy_db" in op_df.columns else op_df.columns[1]
+        faithful = np.interp(
+            np.log(df["frequency_hz"].to_numpy()),
+            np.log(op_df["frequency_hz"].to_numpy()),
+            op_df[col].to_numpy(float),
+        )
+
     return AzulTransferCurve(
         frequency_hz=df["frequency_hz"].to_numpy(),
         central_db=df["precise_central_db"].to_numpy(),
@@ -59,11 +109,37 @@ def load_curve(results_dir: Path = OUT) -> AzulTransferCurve:
         parametric_db=df["parametric_db"].to_numpy(),
         total_central_with_gain_db=total,
         support_state=support,
+        faithful_db=faithful,
     )
 
 
-def load_gain(results_dir: Path = OUT) -> pd.DataFrame:
-    return pd.read_csv(results_dir / "GAIN_GLOBAL_V10_2.csv")
+def load_gain(results_dir: Path | None = None, *, variant: str = "central") -> pd.DataFrame:
+    results_dir = resolve_results_dir(results_dir)
+    if variant in FAITHFUL_VARIANTS:
+        gain_csv = results_dir / "GAIN_COPIA_OPERATIVA.csv"
+        if not gain_csv.exists():
+            gain_csv = MODULE / "_runs" / "det_A" / "results" / "GAIN_COPIA_OPERATIVA.csv"
+        if gain_csv.exists():
+            return pd.read_csv(gain_csv)
+        for name in ("IMPLEMENTACION_FIEL_V17.json", "IMPLEMENTACION_FIEL_V16.json"):
+            impl = results_dir / name
+            if not impl.exists():
+                impl = MODULE / "_runs" / "det_A" / "results" / name
+            if impl.exists():
+                data = json.loads(impl.read_text(encoding="utf-8"))
+                return pd.DataFrame(
+                    [
+                        {
+                            "gain_recommended_db": float(data["gain_db"]),
+                            "gain_source": data.get("operative_variant", name),
+                            "pipeline_version": data.get("version", ""),
+                        }
+                    ]
+                )
+    path = results_dir / "GAIN_GLOBAL_V10_2.csv"
+    if not path.exists():
+        path = MODULE / "results" / "GAIN_GLOBAL_V10_2.csv"
+    return pd.read_csv(path)
 
 
 def load_parametric_preset(results_dir: Path = OUT) -> pd.DataFrame:

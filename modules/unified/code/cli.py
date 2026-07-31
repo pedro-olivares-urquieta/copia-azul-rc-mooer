@@ -224,8 +224,17 @@ def main(argv: list[str] | None = None) -> int:
     common.add_argument(
         "--variant",
         default="central",
-        choices=["central", "robust", "safe", "parametric", "total"],
-        help="Azul curve variant (default: central)",
+        choices=[
+            "central",
+            "robust",
+            "safe",
+            "parametric",
+            "total",
+            "faithful",
+            "copy",
+            "operative",
+        ],
+        help="Azul curve variant (default: central; faithful=unsmoothed operative copy)",
     )
     common.add_argument(
         "--timbre-only",
@@ -272,7 +281,16 @@ def main(argv: list[str] | None = None) -> int:
     audio_opts.add_argument(
         "--variant",
         default="central",
-        choices=["central", "robust", "safe", "parametric", "total"],
+        choices=[
+            "central",
+            "robust",
+            "safe",
+            "parametric",
+            "total",
+            "faithful",
+            "copy",
+            "operative",
+        ],
     )
     audio_opts.add_argument("--timbre-only", action="store_true")
     audio_opts.add_argument(

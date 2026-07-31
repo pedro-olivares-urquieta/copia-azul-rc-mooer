@@ -33,11 +33,15 @@ def azul_target(
     frequency_hz: np.ndarray | None = None,
     paths: RepoPaths | None = None,
 ) -> FitTarget:
-    """Target = Café→Azul transfer (timbre ± global gain)."""
+    """Target = Café→Azul transfer (timbre ± global gain).
+
+    variant ``faithful`` / ``copy`` / ``operative`` loads the unsmoothed
+    hold-out winner from ``CURVA_COPIA_OPERATIVA.csv`` (+ operative gain).
+    """
     paths = paths or discover_repo()
     azul = load_azul(paths)
     curve = azul.load_curve()
-    gain_row = azul.load_gain().iloc[0]
+    gain_row = azul.load_gain(variant=variant).iloc[0]
     gain = float(gain_row["gain_recommended_db"]) if include_gain else 0.0
     freq = np.asarray(frequency_hz if frequency_hz is not None else DEFAULT_GRID, dtype=float)
 
@@ -50,7 +54,12 @@ def azul_target(
         used_gain = gain
 
     # Uncertainty proxy from support: less support → higher unc.
-    if curve.support_state is not None:
+    # Faithful copy: flatter mid uncertainty (hold-out RMSE ~4 dB in presence).
+    if variant in {"faithful", "copy", "operative"}:
+        unc = np.full_like(freq, 0.30)
+        unc = np.where(freq < 500, 0.22, unc)
+        unc = np.where(freq >= 8000, 0.55, unc)
+    elif curve.support_state is not None:
         # Map support labels roughly; unknown → mid uncertainty.
         support = curve.support_state
         # Interpolate nearest support state on log-f grid via index.
