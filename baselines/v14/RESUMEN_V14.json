@@ -1,0 +1,57 @@
+{
+  "run_id": "v14_20260731T074431Z",
+  "gain_v12_energy_neutral_db": -12.038460338023926,
+  "gain_pair_first_neutral_db": -11.836271401295551,
+  "gain_phase_mix_loop_db": -11.070506059888402,
+  "gain_phase_mix_neutral_db": -12.034959472453336,
+  "gain_non_open_sustain_median_db": -11.819382092732038,
+  "gain_non_open_sustain_ci95_db": [
+    -15.220085973878932,
+    -9.622504299102289
+  ],
+  "reliability_median": 0.48596006582384094,
+  "reliability_p10": 0.17413577197642324,
+  "phase_disagreement_median_db": 2.7158059029861183,
+  "smoothing_widths": [
+    {
+      "region": "subgrave",
+      "width_octaves": 0.25,
+      "held_out_mae_db": 1.9575401375008228
+    },
+    {
+      "region": "grave",
+      "width_octaves": 0.25,
+      "held_out_mae_db": 2.6048651972167813
+    },
+    {
+      "region": "medio_bajo",
+      "width_octaves": 0.125,
+      "held_out_mae_db": 5.910514850723429
+    },
+    {
+      "region": "medio",
+      "width_octaves": 0.125,
+      "held_out_mae_db": 10.451713137809197
+    },
+    {
+      "region": "presencia",
+      "width_octaves": 0.125,
+      "held_out_mae_db": 10.912017796545605
+    },
+    {
+      "region": "agudo",
+      "width_octaves": 0.125,
+      "held_out_mae_db": 11.763833727035369
+    },
+    {
+      "region": "aire",
+      "width_octaves": 0.5,
+      "held_out_mae_db": 12.3811284925047
+    }
+  ],
+  "v41_cross_rmse_v12_db": 3.348427166183608,
+  "v41_cross_rmse_v14_db": 3.304871089134244,
+  "v14_vs_v12_presence_2k4k_rmse_db": 8.468456773276742,
+  "loop_iterations": 2,
+  "elapsed_s": 7.2400383949279785
+}
