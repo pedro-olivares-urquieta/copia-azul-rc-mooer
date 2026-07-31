@@ -1,0 +1,26 @@
+{
+  "run_id": "v12_20260731T065200Z",
+  "gain_v11_db": -11.06205198028742,
+  "gain_v12_loop_db": -11.064878049050122,
+  "curve_energy_effect_db": -0.9735822889738027,
+  "gain_v12_energy_neutral_db": -12.038460338023926,
+  "mean_30_2500_before_db": -0.044187350466600356,
+  "mean_30_2500_after_db": 0.9293949385072022,
+  "diagnostic_max_db": 2.8519622473014223,
+  "neutral_max_db": 3.825544536275225,
+  "recommended_max_db": 1.2506556786662437,
+  "reliability_median": 0.1045351428619629,
+  "neutrality_constant_db": 0.32398477385180846,
+  "weights": {
+    "median_snr_score": 1.0,
+    "median_cycles_score": 1.0,
+    "observations_zeroed_by_cycles": 1939,
+    "observations_zeroed_by_open_mask": 0,
+    "observations_hit_by_mains": 457,
+    "median_codec_prior": 1.0,
+    "weight_retained_fraction": 0.758843390258555
+  },
+  "loop_iterations": 1,
+  "v41_cross_check_rmse_db": 3.348427166183608,
+  "elapsed_s": 65.8415379524231
+}
